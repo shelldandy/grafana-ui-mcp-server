@@ -11,7 +11,7 @@ import { setupHandlers } from './handler.js';
 // Initialize the MCP server with metadata and capabilities
 const server = new Server(
   {
-    name: "my-mcp",
+    name: "shadcn-ui",
     version: "1.0.0",
   },
   {

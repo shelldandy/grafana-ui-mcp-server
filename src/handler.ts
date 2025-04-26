@@ -18,13 +18,21 @@ import {
 import { type Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { resourceHandlers, resources } from "./resources.js";
 import { promptHandlers, prompts } from "./prompts.js";
-import { toolHandlers, tools } from "./tools.js";
+import { toolHandlers, tools, server as mcpServer } from "./tools.js";
 import {
   getResourceTemplate,
   resourceTemplates,
 } from "./resource-templates.js";
 import { z } from "zod";
-import * as componentSchemas from "./schemas/component.js";
+
+// Define basic component schemas here for tool validation
+const componentSchema = { componentName: z.string() };
+const searchSchema = { query: z.string() };
+const themesSchema = { query: z.string().optional() };
+const blocksSchema = { 
+  query: z.string().optional(), 
+  category: z.string().optional() 
+};
 
 /**
  * Sets up all request handlers for the MCP server
@@ -121,11 +129,11 @@ export const setupHandlers = (server: Server): void => {
     try {
       // Validate tool input with Zod if applicable
       const toolSchema = getToolSchema(name);
-      let validatedParams = params;
+      let validatedParams = params || {}; // Ensure params is never undefined
       
       if (toolSchema) {
         try {
-          validatedParams = toolSchema.parse(params);
+          validatedParams = toolSchema.parse(validatedParams);
         } catch (validationError) {
           if (validationError instanceof z.ZodError) {
             const errorMessages = validationError.errors.map(err => 
@@ -142,7 +150,7 @@ export const setupHandlers = (server: Server): void => {
       }
       
       // Ensure handler returns a Promise
-      const result = await Promise.resolve(handler(validatedParams));
+      const result = await Promise.resolve(handler(validatedParams as any));
       return result;
     } catch (error) {
       if (error instanceof McpError) throw error;
@@ -169,22 +177,22 @@ function getToolSchema(toolName: string): z.ZodType | undefined {
     switch(toolName) {
       case 'get_component':
       case 'get_component_details':
-        return componentSchemas.GetComponentSchema;
+        return z.object(componentSchema);
         
       case 'get_examples':
-        return componentSchemas.GetExamplesSchema;
+        return z.object(componentSchema);
         
       case 'get_usage':
-        return componentSchemas.GetUsageSchema;
+        return z.object(componentSchema);
         
       case 'search_components':
-        return componentSchemas.SearchQuerySchema;
+        return z.object(searchSchema);
         
       case 'get_themes':
-        return componentSchemas.GetThemesSchema;
+        return z.object(themesSchema);
         
       case 'get_blocks':
-        return componentSchemas.GetBlocksSchema;
+        return z.object(blocksSchema);
         
       default:
         return undefined;
