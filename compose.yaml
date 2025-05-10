@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mcp-server-stdio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-server-stdio
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+  mcp-server-http:
+    build:
+      context: .
+      dockerfile: Dockerfile.http
+    container_name: mcp-server-http
+    ports:
+      - "3000:3000" 
+    volumes:
+      - ./src:/app/src
+    environment:
+      - NODE_ENV=development
+      - PORT=3000 # Uncomment and set if your http.ts needs a specific port
+    restart: unless-stopped

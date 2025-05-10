@@ -82,7 +82,7 @@ app.post("/messages", async (req: Request, res: Response) => {
 });
 
 // Default port is 3001, but can be configured via environment variable
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Start the server
 const httpServer = app.listen(PORT, () => {

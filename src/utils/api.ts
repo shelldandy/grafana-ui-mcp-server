@@ -1,13 +1,60 @@
 import {axios} from './axios.js';
 import * as cheerio from 'cheerio';
-import { 
-  ComponentExample, 
-  ComponentInfo, 
-  ComponentProp,
-  Theme,
-  Block
-} from '../schemas/component.js';
+import { z } from 'zod';
 import { cache } from './cache.js';
+
+// Zod Schemas
+const ComponentPropSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  description: z.string(),
+  required: z.boolean().optional(),
+  default: z.string().optional(),
+  example: z.string().optional() // Added example based on usage in extractVariants
+});
+
+const ComponentExampleSchema = z.object({
+  title: z.string(),
+  code: z.string(),
+  url: z.string().optional(),
+  description: z.string().optional() // Added description based on usage in collectGeneralCodeExamples
+});
+
+const ComponentInfoSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  url: z.string().optional(),
+  props: z.array(ComponentPropSchema).optional(),
+  examples: z.array(ComponentExampleSchema).optional(),
+  source: z.string().optional(),
+  installation: z.string().optional(),
+  sourceUrl: z.string().optional(), // Added based on usage in extractComponentInfo
+  usage: z.string().optional() // Added based on usage in extractComponentInfo
+});
+
+const ThemeSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  url: z.string().optional(),
+  preview: z.string().optional(), // Added based on usage in getThemes
+  author: z.string().optional() // Added based on usage in getThemes
+});
+
+const BlockSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  url: z.string().optional(),
+  preview: z.string().optional(),
+  code: z.string().optional(), // Added based on usage in getBlocks and getBlockDetails
+  dependencies: z.array(z.string()).optional() // Added based on usage in getBlocks and getBlockDetails
+});
+
+// Infer TypeScript types from Zod schemas
+export type ComponentProp = z.infer<typeof ComponentPropSchema>;
+export type ComponentExample = z.infer<typeof ComponentExampleSchema>;
+export type ComponentInfo = z.infer<typeof ComponentInfoSchema>;
+export type Theme = z.infer<typeof ThemeSchema>;
+export type Block = z.infer<typeof BlockSchema>;
 
 const SHADCN_DOCS_URL = "https://ui.shadcn.com";
 const SHADCN_GITHUB_URL = "https://github.com/shadcn-ui/ui";
@@ -40,7 +87,7 @@ function getComponentDemo(name: string, url: string): Promise<ComponentInfo> {
     const cacheKey = `${CACHE_KEYS.COMPONENT}demo:${name}`;
     
     return cache.getOrFetch(cacheKey, async () => {
-        const res = await axios.github.get(url);
+        const res = await axios.githubRaw.get(url);
         // Parse the response using cheerio
         const $ = cheerio.load(res.data);
         
@@ -124,6 +171,8 @@ function extractComponentInfo($: cheerio.CheerioAPI, componentName: string, url?
     // Extract variant information
     const props = extractVariants($, componentName);
     
+    const propsArray: ComponentProp[] = Object.values(props);
+    
     return {
         name: componentName,
         description,
@@ -131,7 +180,7 @@ function extractComponentInfo($: cheerio.CheerioAPI, componentName: string, url?
         sourceUrl,
         installation: installation.trim(),
         usage: usage.trim(),
-        props: Object.keys(props).length > 0 ? props : undefined,
+        props: propsArray.length > 0 ? propsArray : undefined,
     };
 }
 
@@ -220,6 +269,7 @@ function extractVariants($: cheerio.CheerioAPI, componentName: string): Record<s
             }
             
             props[variantName] = {
+                name: variantName, // Added missing name property
                 type: "variant",
                 description: `${variantName} variant of the ${componentName} component`,
                 required: false,
@@ -325,7 +375,7 @@ function collectSectionExamples(
  */
 async function collectGitHubExamples(componentName: string, examples: ComponentExample[]): Promise<void> {
     try {
-        const githubResponse = await axios.github.get(
+        const githubResponse = await axios.githubRaw.get(
             `apps/www/registry/default/example/${componentName}-demo.tsx`
         );
         
@@ -460,29 +510,26 @@ async function getBlocks(query?: string, category?: string): Promise<Block[]> {
     const blocks = await cache.getOrFetch(CACHE_KEYS.BLOCKS, async () => {
         try {
             // Fetch blocks from shadcn/ui docs or GitHub
-            const response = await axios.github.get('apps/www/registry/default/example/');
+            const response = await axios.githubApi.get('repos/shadcn-ui/ui/contents/apps/www/registry/default/example');
             
             // For simplicity, we're assuming the response includes a directory listing
             const blocksData: Block[] = [];
             
             // Parse the GitHub directory response
-            const $ = cheerio.load(response.data);
-            
-            $('a').each((_, el) => {
-                const href = $(el).attr('href');
-                
-                // Find .tsx files that are examples
-                if (href && href.endsWith('.tsx')) {
-                    const name = href.replace('.tsx', '').replace(/-/g, ' ');
-                    
-                    blocksData.push({
-                        name: name.charAt(0).toUpperCase() + name.slice(1),
-                        description: `UI block for ${name}`,
-                        code: `// Code will be fetched when block is requested`,
-                        dependencies: []
-                    });
-                }
-            });
+            // Assuming response.data is an array of file/directory objects
+            if (Array.isArray(response.data)) {
+                response.data.forEach((item: any) => {
+                    if (item.type === 'file' && item.name.endsWith('.tsx')) {
+                        const name = item.name.replace('.tsx', '').replace(/-/g, ' ');
+                        blocksData.push({
+                            name: name.charAt(0).toUpperCase() + name.slice(1),
+                            description: `UI block for ${name}`,
+                            // code: `// Code will be fetched when block is requested`, // Code is fetched in getBlockDetails
+                            // dependencies: [] // Dependencies are extracted in getBlockDetails
+                        });
+                    }
+                });
+            }
             
             return blocksData;
             
@@ -506,9 +553,10 @@ async function getBlockDetails(blockName: string): Promise<Block | null> {
     return cache.getOrFetch(cacheKey, async () => {
         try {
             const formattedName = blockName.toLowerCase().replace(/\s+/g, '-');
-            const response = await axios.github.get(`apps/www/registry/default/example/${formattedName}.tsx`);
+            // Use githubRaw for fetching raw file content
+            const response = await axios.githubRaw.get(`apps/www/registry/default/example/${formattedName}.tsx`);
             
-            if (response.status === 200) {
+            if (response.status === 200 && typeof response.data === 'string') {
                 return {
                     name: blockName,
                     description: `UI block for ${blockName}`,
@@ -568,7 +616,7 @@ function filterBlocks(blocks: Block[], query?: string, category?: string): Block
         const lowerCategory = category.toLowerCase();
         filtered = filtered.filter(block => 
             block.name.toLowerCase().includes(lowerCategory) ||
-            block.dependencies!.some(dep => dep.toLowerCase().includes(lowerCategory))
+            (block.dependencies && block.dependencies.some((dep: string) => dep.toLowerCase().includes(lowerCategory)))
         );
     }
     
