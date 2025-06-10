@@ -7,6 +7,16 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { setupHandlers } from './handler.js';
+import { axios } from './utils/axios.js';
+
+// Parse command line arguments for GitHub API key
+const args = process.argv.slice(2);
+const githubApiKeyIndex = args.findIndex(arg => arg === '--github-api-key' || arg === '-g');
+if (githubApiKeyIndex !== -1 && args[githubApiKeyIndex + 1]) {
+  const apiKey = args[githubApiKeyIndex + 1];
+  axios.setGitHubApiKey(apiKey);
+  console.info('{"jsonrpc": "2.0", "method": "log", "params": { "message": "GitHub API key configured successfully" }}');
+}
 
 // Initialize the MCP server with metadata and capabilities
 const server = new Server(

@@ -8,7 +8,17 @@ import express, { Request, Response } from "express";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { setupHandlers } from './handler.js';
+import { axios } from './utils/axios.js';
 import cors from 'cors';
+
+// Parse command line arguments for GitHub API key
+const args = process.argv.slice(2);
+const githubApiKeyIndex = args.findIndex(arg => arg === '--github-api-key' || arg === '-g');
+if (githubApiKeyIndex !== -1 && args[githubApiKeyIndex + 1]) {
+  const apiKey = args[githubApiKeyIndex + 1];
+  axios.setGitHubApiKey(apiKey);
+  console.log('GitHub API key configured successfully for HTTP server');
+}
 
 // Initialize the MCP server with metadata and capabilities
 // This mirrors the configuration in index.ts

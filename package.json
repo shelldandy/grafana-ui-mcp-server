@@ -6,8 +6,11 @@
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx @modelcontextprotocol/inspector node build/index.js",
+    "start:with-key": "npx @modelcontextprotocol/inspector node build/index.js --github-api-key",
+    "start:http": "tsc && node build/http.js",
+    "start:http:with-key": "tsc && node build/http.js --github-api-key",
     "clean": "rm -rf build",
-    "start:http":"tsc && node build/http.js"
+    "serve": "pnpm build && node build/index.js"
   },
   "keywords": [],
   "author": "",
@@ -26,5 +29,8 @@
     "@types/express": "^5.0.1",
     "@types/node": "^22.10.5",
     "typescript": "^5.7.2"
+  },
+  "bin":{
+    "shadcn-mcp":"./build/index.js"
   }
 }

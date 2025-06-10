@@ -23,6 +23,34 @@ cp .env.example .env
 ```
 Modify `.env` as needed (e.g., `PORT` for the HTTP server, `GITHUB_PERSONAL_ACCESS_TOKEN`). Docker Compose automatically loads variables from this file.
 
+### GitHub API Rate Limits
+
+The server uses the GitHub API to fetch component data. Without authentication, you're limited to 60 requests per hour. To avoid rate limits, you can:
+
+1. **Environment Variable** (recommended for production): Set `GITHUB_PERSONAL_ACCESS_TOKEN` in your `.env` file
+2. **Command Line Argument** (useful for development): Pass `--github-api-key YOUR_TOKEN` when starting the server
+
+**Getting a GitHub Personal Access Token:**
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate a new token with no special scopes (public repository access is sufficient)
+3. Copy the token and use it with one of the methods above
+
+**Usage examples:**
+```bash
+# Using command line argument (STDIO server)
+pnpm build && node build/index.js --github-api-key YOUR_TOKEN
+
+# Using command line argument (HTTP server)  
+pnpm build && node build/http.js --github-api-key YOUR_TOKEN
+
+# Using environment variable
+export GITHUB_PERSONAL_ACCESS_TOKEN=YOUR_TOKEN
+pnpm start
+
+# Short form with -g flag
+pnpm build && node build/index.js -g YOUR_TOKEN
+```
+
 ### Using Docker Compose
 
 The `compose.yaml` defines two services: `mcp-server-stdio` and `mcp-server-http`.

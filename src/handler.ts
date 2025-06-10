@@ -108,7 +108,7 @@ export const setupHandlers = (server: Server): void => {
   server.setRequestHandler(GetPromptRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
     const promptHandler = promptHandlers[name as keyof typeof promptHandlers];
-    if (promptHandler) return promptHandler(args as { name: string, style?: string });
+    if (promptHandler) return promptHandler(args as any);
     throw new McpError(ErrorCode.InvalidParams, `Prompt not found: ${name}`);
   });
 

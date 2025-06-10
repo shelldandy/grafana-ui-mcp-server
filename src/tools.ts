@@ -3,6 +3,8 @@
  * 
  * This file defines the tools that can be called by the AI model through the MCP protocol.
  * Each tool has a schema that defines its parameters and a handler function that implements its logic.
+ * 
+ * Updated for shadcn/ui v4 with improved error handling and cleaner implementation.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -27,131 +29,147 @@ function createSuccessResponse(data: any) {
 }
 
 /**
+ * Creates a standardized error response
+ * @param message Error message
+ * @param code Error code
+ * @returns Formatted error response
+ */
+function createErrorResponse(message: string, code: ErrorCode = ErrorCode.InternalError) {
+  throw new McpError(code, message);
+}
+
+/**
  * Define an MCP server for our tools
  */
 export const server = new McpServer({
-  name: "ShadcnUI Tools",
-  version: "1.0.0"
+  name: "ShadcnUI v4 Tools",
+  version: "2.0.0"
 });
 
-// Add the get_component tool
+// Tool: get_component - Fetch component source code
 server.tool("get_component",
-  { componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') },
-  async ({ componentName }) => {
-    try {
-      const name = componentName.toLowerCase();
-      
-      // Fetch the component from GitHub
-      try {
-        // Many components are directly named, like button.tsx
-        const response = await axios.githubRaw.get(`/registry/new-york-v4/ui/${name}.tsx`);
-        return {
-          content: [{ type: "text", text: response.data }]
-        };
-      } catch (error) {
-        // Some components might be in a directory structure like accordion/accordion.tsx
-        // If the first attempt fails, try this alternative path
-        try {
-          const response = await axios.githubRaw.get(`/registry/new-york-v4/ui/${name}.tsx`);
-          return {
-            content: [{ type: "text", text: response.data }]
-          };
-        } catch (nestedError) {
-          // If both approaches fail, check each GitHub directory
-          for (const dir of axios.githubDirectories) {
-            try {
-              const response = await axios.githubRaw.get(`${dir}/${name}.tsx`);
-              return {
-                content: [{ type: "text", text: response.data }]
-              };
-            } catch (dirError) {
-              // Continue to next directory
-            }
-          }
-          
-          // If we've tried all options and still failed, throw the original error
-          throw error;
-        }
-      }
-    } catch (error) {
-      if (error instanceof McpError) {
-        throw error;
-      }
-      
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to get component source code: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-);
-
-// Add the get_component_demo tool
-server.tool("get_component_demo",
-  { componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') },
-  async ({ componentName }) => {
-    try {
-      const name = componentName.toLowerCase();
-      
-      // Fetch the component demo from GitHub
-      try {
-        // Try the demo file directly - many components have a demo file named like button-demo.tsx
-        const response = await axios.githubRaw.get(`/components/${name}-demo.tsx`);
-        return {
-          content: [{ type: "text", text: response.data }]
-        };
-      } catch (error) {
-        // If that fails, try looking in the examples directory
-        try {
-          const response = await axios.githubRaw.get(`/examples/${name}-example.tsx`);
-          return {
-            content: [{ type: "text", text: response.data }]
-          };
-        } catch (exampleError) {
-          // As a last resort, try the special case where demos might be in a subfolder
-          try {
-            const response = await axios.githubRaw.get(`/components/${name}/${name}-demo.tsx`);
-            return {
-              content: [{ type: "text", text: response.data }]
-            };
-          } catch (nestedError) {
-            // If all approaches fail, throw the original error
-            throw error;
-          }
-        }
-      }
-    } catch (error) {
-      if (error instanceof McpError) {
-        throw error;
-      }
-      
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to get component demo code: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-);
-
-// Add new get_directory_structure tool
-server.tool("get_directory_structure",
+  'Get the source code for a specific shadcn/ui v4 component',
   { 
-    path: z.string().optional().describe('Path within the repository (e.g., "ui", "registry/new-york-v4")'),
+    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const sourceCode = await axios.getComponentSource(componentName);
+      return {
+        content: [{ type: "text", text: sourceCode }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_component_demo - Fetch component demo/example
+server.tool("get_component_demo",
+  'Get demo code illustrating how a shadcn/ui v4 component should be used',
+  { 
+    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const demoCode = await axios.getComponentDemo(componentName);
+      return {
+        content: [{ type: "text", text: demoCode }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get demo for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: list_components - Get all available components
+server.tool("list_components",
+  'Get all available shadcn/ui v4 components',
+  {},
+  async () => {
+    try {
+      const components = await axios.getAvailableComponents();
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({ 
+            components: components.sort(),
+            total: components.length 
+          }, null, 2) 
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to list components: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_component_metadata - Get component metadata
+server.tool("get_component_metadata",
+  'Get metadata for a specific shadcn/ui v4 component',
+  { 
+    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const metadata = await axios.getComponentMetadata(componentName);
+      if (!metadata) {
+        throw new McpError(ErrorCode.InvalidRequest, `Metadata not found for component "${componentName}"`);
+      }
+      
+      return {
+        content: [{ type: "text", text: JSON.stringify(metadata, null, 2) }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get metadata for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_directory_structure - Get repository directory structure
+server.tool("get_directory_structure",
+  'Get the directory structure of the shadcn-ui v4 repository',
+  { 
+    path: z.string().optional().describe('Path within the repository (default: v4 registry)'),
     owner: z.string().optional().describe('Repository owner (default: "shadcn-ui")'),
     repo: z.string().optional().describe('Repository name (default: "ui")'),
     branch: z.string().optional().describe('Branch name (default: "main")')
   },
   async ({ path, owner, repo, branch }) => {
     try {
-      // Set default path if not provided
-      const repoPath = path || 'apps/v4/registry/new-york-v4';
-      
-      // Build directory tree structure
       const directoryTree = await axios.buildDirectoryTree(
-        owner || 'shadcn-ui',
-        repo || 'ui',
-        repoPath,
-        branch || 'main'
+        owner || axios.paths.REPO_OWNER,
+        repo || axios.paths.REPO_NAME,
+        path || axios.paths.NEW_YORK_V4_PATH,
+        branch || axios.paths.REPO_BRANCH
       );
       
       return {
@@ -173,97 +191,68 @@ server.tool("get_directory_structure",
   }
 );
 
-// Export function implementations for compatibility with existing code
-const getComponent = async ({ componentName }: { componentName: string }) => {
-  try {
-    const name = componentName.toLowerCase();
-    
-    // Fetch the component from GitHub
+// Tool: get_block - Get specific block code from v4 registry
+server.tool("get_block",
+  'Get source code for a specific shadcn/ui v4 block (e.g., calendar-01, dashboard-01)',
+  { 
+    blockName: z.string().describe('Name of the block (e.g., "calendar-01", "dashboard-01", "login-02")'),
+    includeComponents: z.boolean().optional().describe('Whether to include component files for complex blocks (default: true)')
+  },
+  async ({ blockName, includeComponents = true }) => {
     try {
-      const response = await axios.githubRaw.get(`/registry/new-york-v4/ui/${name}.tsx`);
-      return createSuccessResponse(response.data);
+      const blockData = await axios.getBlockCode(blockName, includeComponents);
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify(blockData, null, 2)
+        }]
+      };
     } catch (error) {
-      // Check alternative paths and directories as in the server.tool implementation
-      try {
-        const response = await axios.githubRaw.get(`/registry/new-york-v4/ui/${name}.tsx`);
-        return createSuccessResponse(response.data);
-      } catch (nestedError) {
-        for (const dir of axios.githubDirectories) {
-          try {
-            const response = await axios.githubRaw.get(`${dir}/${name}.tsx`);
-            return createSuccessResponse(response.data);
-          } catch (dirError) {
-            // Continue to next directory
-          }
-        }
+      if (error instanceof McpError) {
         throw error;
       }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get block "${blockName}": ${error instanceof Error ? error.message : String(error)}`
+      );
     }
-  } catch (error) {
-    if (error instanceof McpError) throw error;
-    throw new McpError(ErrorCode.InternalError, `Failed to get component source code: ${error instanceof Error ? error.message : String(error)}`);
   }
-};
+);
 
-const getComponentDemo = async ({ componentName }: { componentName: string }) => {
-  try {
-    const name = componentName.toLowerCase();
-    
+// Tool: list_blocks - Get all available blocks
+server.tool("list_blocks",
+  'Get all available shadcn/ui v4 blocks with categorization',
+  {
+    category: z.string().optional().describe('Filter by category (calendar, dashboard, login, sidebar, products)')
+  },
+  async ({ category }) => {
     try {
-      const response = await axios.githubRaw.get(`/components/${name}-demo.tsx`);
-      return createSuccessResponse(response.data);
+      const blocks = await axios.getAvailableBlocks(category);
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify(blocks, null, 2)
+        }]
+      };
     } catch (error) {
-      try {
-        const response = await axios.githubRaw.get(`/examples/${name}-example.tsx`);
-        return createSuccessResponse(response.data);
-      } catch (exampleError) {
-        try {
-          const response = await axios.githubRaw.get(`/components/${name}/${name}-demo.tsx`);
-          return createSuccessResponse(response.data);
-        } catch (nestedError) {
-          throw error;
-        }
+      if (error instanceof McpError) {
+        throw error;
       }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to list blocks: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
-  } catch (error) {
-    if (error instanceof McpError) throw error;
-    throw new McpError(ErrorCode.InternalError, `Failed to get component demo code: ${error instanceof Error ? error.message : String(error)}`);
   }
-};
+);
 
-// Add new directory structure function
-const getDirectoryStructure = async ({ 
-  path, 
-  owner = 'shadcn-ui', 
-  repo = 'ui', 
-  branch = 'main' 
-}: { 
-  path?: string, 
-  owner?: string, 
-  repo?: string, 
-  branch?: string 
-}) => {
-  try {
-    // Set default path if not provided
-    const repoPath = path || 'apps/v4/registry/new-york-v4';
-    
-    // Build directory tree structure
-    const directoryTree = await axios.buildDirectoryTree(owner, repo, repoPath, branch);
-    return createSuccessResponse(directoryTree);
-  } catch (error) {
-    if (error instanceof McpError) throw error;
-    throw new McpError(
-      ErrorCode.InternalError,
-      `Failed to get directory structure: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-};
-
-// Export tools for compatibility with existing code
+// Export tools for backward compatibility
 export const tools = {
   'get_component': {
     name: 'get_component',
-    description: 'Get the source code for a specific shadcn/ui component',
+    description: 'Get the source code for a specific shadcn/ui v4 component',
     inputSchema: {
       type: 'object',
       properties: {
@@ -277,7 +266,29 @@ export const tools = {
   },
   'get_component_demo': {
     name: 'get_component_demo',
-    description: 'Get demo code illustrating how a shadcn/ui component should be used',
+    description: 'Get demo code illustrating how a shadcn/ui v4 component should be used',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        componentName: {
+          type: 'string',
+          description: 'Name of the shadcn/ui component (e.g., "accordion", "button")',
+        },
+      },
+      required: ['componentName'],
+    },
+  },
+  'list_components': {
+    name: 'list_components',
+    description: 'Get all available shadcn/ui v4 components',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  'get_component_metadata': {
+    name: 'get_component_metadata',
+    description: 'Get metadata for a specific shadcn/ui v4 component',
     inputSchema: {
       type: 'object',
       properties: {
@@ -291,13 +302,13 @@ export const tools = {
   },
   'get_directory_structure': {
     name: 'get_directory_structure',
-    description: 'Get the directory structure of the shadcn-ui repository',
+    description: 'Get the directory structure of the shadcn-ui v4 repository',
     inputSchema: {
       type: 'object',
       properties: {
         path: {
           type: 'string',
-          description: 'Path within the repository (e.g., "ui", "registry/new-york-v4")',
+          description: 'Path within the repository (default: v4 registry)',
         },
         owner: {
           type: 'string',
@@ -314,11 +325,85 @@ export const tools = {
       },
     },
   },
+  'get_block': {
+    name: 'get_block',
+    description: 'Get source code for a specific shadcn/ui v4 block (e.g., calendar-01, dashboard-01)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        blockName: {
+          type: 'string',
+          description: 'Name of the block (e.g., "calendar-01", "dashboard-01", "login-02")',
+        },
+        includeComponents: {
+          type: 'boolean',
+          description: 'Whether to include component files for complex blocks (default: true)',
+        },
+      },
+      required: ['blockName'],
+    },
+  },
+  'list_blocks': {
+    name: 'list_blocks',
+    description: 'Get all available shadcn/ui v4 blocks with categorization',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: {
+          type: 'string',
+          description: 'Filter by category (calendar, dashboard, login, sidebar, products)',
+        },
+      },
+    },
+  },
 };
 
-// Export tool handlers for compatibility with existing code
+// Export tool handlers for backward compatibility
 export const toolHandlers = {
-  "get_component": getComponent,
-  "get_component_demo": getComponentDemo,
-  "get_directory_structure": getDirectoryStructure,
+  "get_component": async ({ componentName }: { componentName: string }) => {
+    const sourceCode = await axios.getComponentSource(componentName);
+    return createSuccessResponse(sourceCode);
+  },
+  "get_component_demo": async ({ componentName }: { componentName: string }) => {
+    const demoCode = await axios.getComponentDemo(componentName);
+    return createSuccessResponse(demoCode);
+  },
+  "list_components": async () => {
+    const components = await axios.getAvailableComponents();
+    return createSuccessResponse({ 
+      components: components.sort(),
+      total: components.length 
+    });
+  },
+  "get_component_metadata": async ({ componentName }: { componentName: string }) => {
+    const metadata = await axios.getComponentMetadata(componentName);
+    return createSuccessResponse(metadata);
+  },
+  "get_directory_structure": async ({ 
+    path, 
+    owner = axios.paths.REPO_OWNER, 
+    repo = axios.paths.REPO_NAME, 
+    branch = axios.paths.REPO_BRANCH 
+  }: { 
+    path?: string, 
+    owner?: string, 
+    repo?: string, 
+    branch?: string 
+  }) => {
+    const directoryTree = await axios.buildDirectoryTree(
+      owner,
+      repo,
+      path || axios.paths.NEW_YORK_V4_PATH,
+      branch
+    );
+    return createSuccessResponse(directoryTree);
+  },
+  "get_block": async ({ blockName, includeComponents = true }: { blockName: string, includeComponents?: boolean }) => {
+    const blockData = await axios.getBlockCode(blockName, includeComponents);
+    return createSuccessResponse(blockData);
+  },
+  "list_blocks": async ({ category }: { category?: string }) => {
+    const blocks = await axios.getAvailableBlocks(category);
+    return createSuccessResponse(blocks);
+  },
 };
