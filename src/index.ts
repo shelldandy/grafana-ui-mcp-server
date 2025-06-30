@@ -6,9 +6,9 @@
  * Provides AI assistants with access to component source code, documentation, stories, and metadata.
  *
  * Usage:
- *   npx grafana-ui-mcp-server
- *   npx grafana-ui-mcp-server --github-api-key YOUR_TOKEN
- *   npx grafana-ui-mcp-server -g YOUR_TOKEN
+ *   npx @jpisnice/grafana-ui-mcp-server
+ *   npx @jpisnice/grafana-ui-mcp-server --github-api-key YOUR_TOKEN
+ *   npx @jpisnice/grafana-ui-mcp-server -g YOUR_TOKEN
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -24,10 +24,13 @@ async function parseArgs() {
   // Help flag
   if (args.includes("--help") || args.includes("-h")) {
     console.log(`
-Grafana UI MCP Server
+Grafana UI MCP Server v1.0.0
+
+A Model Context Protocol server for Grafana UI components, providing AI assistants
+with comprehensive access to component source code, documentation, stories, and metadata.
 
 Usage:
-  npx grafana-ui-mcp-server [options]
+  npx @jpisnice/grafana-ui-mcp-server [options]
 
 Options:
   --github-api-key, -g <token>    GitHub Personal Access Token for API access
@@ -35,12 +38,35 @@ Options:
   --version, -v                   Show version information
 
 Examples:
-  npx grafana-ui-mcp-server
-  npx grafana-ui-mcp-server --github-api-key ghp_your_token_here
-  npx grafana-ui-mcp-server -g ghp_your_token_here
+  npx @jpisnice/grafana-ui-mcp-server
+  npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+  npx @jpisnice/grafana-ui-mcp-server -g ghp_your_token_here
 
 Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
+
+Available Tools (11 total):
+  Core Tools:
+    • get_component              - Get component source code
+    • get_component_demo         - Get Storybook demo/usage examples
+    • list_components            - List all available components
+    • get_component_metadata     - Get component metadata and props
+    • get_directory_structure    - Browse repository structure
+    
+  Grafana-Specific Tools:
+    • get_component_documentation - Get rich MDX documentation
+    • get_component_stories      - Get parsed Storybook stories
+    • get_component_tests        - Get test files and usage patterns
+    • search_components          - Search components by name/description
+    • get_theme_tokens           - Get Grafana design system tokens
+    • get_component_dependencies - Get dependency tree analysis
+
+GitHub API Setup:
+  Without token: 60 requests/hour (rate limited)
+  With token:    5,000 requests/hour (recommended)
+  
+  Get your free token at: https://github.com/settings/tokens
+  Select 'public_repo' scope for optimal performance.
 
 For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
 `);
@@ -61,9 +87,9 @@ For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
 
       const packageContent = fs.readFileSync(packagePath, "utf8");
       const packageJson = JSON.parse(packageContent);
-      console.log(`grafana-ui-mcp-server v${packageJson.version}`);
+      console.log(`Grafana UI MCP Server v${packageJson.version}`);
     } catch (error) {
-      console.log("grafana-ui-mcp-server v1.0.0");
+      console.log("Grafana UI MCP Server v1.0.0");
     }
     process.exit(0);
   }
