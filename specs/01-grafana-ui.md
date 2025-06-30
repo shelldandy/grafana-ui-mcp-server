@@ -459,7 +459,37 @@ export interface ColorTokens {
 - ✅ **Consistent CLI Branding** - Updated version command and all CLI outputs to use "Grafana UI MCP Server" branding
 - ✅ **Documentation Verification** - All build systems, CLI commands, and package tests verified working correctly
 
-### Phase 4: Testing and Optimization
+### Phase 4: Prompts Migration ✅ COMPLETED
+
+1. ✅ Migrate prompts from shadcn/ui to Grafana UI focus
+2. ✅ Update all prompt handlers with Grafana-specific tools and instructions
+
+**Phase 4 Implementation Summary:**
+
+- ✅ **Complete Prompts Transformation** (`src/prompts.ts`) - All 5 prompts completely migrated from shadcn/ui to Grafana UI focus:
+  - **Removed**: `build-shadcn-page`, `create-dashboard`, `create-auth-flow`, `optimize-shadcn-component`, `create-data-table`
+  - **Added**: `build-grafana-dashboard`, `create-grafana-form`, `optimize-grafana-component`, `create-data-visualization`, `build-admin-interface`
+- ✅ **All Prompt Handlers Rewritten** - Updated with Grafana UI specific instructions, observability focus, and comprehensive tool integration
+- ✅ **New Helper Functions** - Added 4 new Grafana-specific helper functions:
+  - `getDashboardTypeSpecificInstructions` - For monitoring, analytics, infrastructure, application, and business dashboards
+  - `getFormTypeSpecificInstructions` - For authentication, settings, data-source, alert, and user-management forms
+  - `getDataSourceSpecificInstructions` - For time-series, logs, metrics, traces, and JSON data handling
+  - `getInterfaceTypeSpecificInstructions` - For user-management, plugin-config, org-settings, and data-sources admin interfaces
+- ✅ **Enhanced Optimization Instructions** - Updated `getOptimizationInstructions` with Grafana-specific theming optimization
+- ✅ **Complete Tool Integration** - All prompts now reference the 11 available Grafana UI MCP tools:
+  - Core tools: `get_component`, `get_component_demo`, `list_components`, `get_component_metadata`, `get_directory_structure`
+  - Grafana tools: `get_component_documentation`, `get_component_stories`, `get_component_tests`, `search_components`, `get_theme_tokens`, `get_component_dependencies`
+- ✅ **TypeScript Compilation Verified** - All new prompt code compiles successfully
+
+**Prompt Coverage:**
+
+- **Dashboard Building**: Comprehensive monitoring and analytics dashboard creation with panels, layouts, and theming
+- **Form Creation**: Authentication, settings, and configuration forms with validation and Grafana UI patterns
+- **Component Optimization**: Performance, accessibility, responsive, and theming optimizations for Grafana UI components
+- **Data Visualization**: Tables, charts, and visualizations for time-series, logs, metrics, traces, and JSON data
+- **Admin Interfaces**: User management, plugin configuration, organization settings, and data source management
+
+### Phase 5: Testing and Optimization
 
 1. Create comprehensive test suite
 2. Performance optimization and caching
@@ -674,7 +704,58 @@ The new architecture supports advanced features like design system integration, 
 - `README.md` - **COMPLETE REWRITE** - Full transformation to Grafana UI focus with comprehensive tool documentation
 - `package.json` - **ENHANCED** - Improved description and expanded keyword coverage
 
-**Next Steps (Phase 4):**
+### Phase 4 Completion - January 2025 ✅
+
+**Completed Tasks:**
+
+- ✅ **Complete Prompts Migration** (`src/prompts.ts`) - Full transformation from shadcn/ui to Grafana UI focus:
+  - Replaced all 5 shadcn/ui prompts with 5 new Grafana UI specific prompts
+  - `build-grafana-dashboard` - Create monitoring/observability dashboards with panels, charts, and metrics
+  - `create-grafana-form` - Build forms for authentication, settings, and configuration using Grafana UI patterns
+  - `optimize-grafana-component` - Optimize Grafana UI components with performance/accessibility focus
+  - `create-data-visualization` - Create data tables, charts, and visualizations using Grafana UI components
+  - `build-admin-interface` - Create admin interfaces following Grafana's design patterns
+
+- ✅ **Comprehensive Prompt Handler Rewrite** - All 5 prompt handlers completely rewritten:
+  - Updated tool references from shadcn/ui blocks to Grafana UI MCP tools
+  - Added observability and monitoring focus throughout all instructions
+  - Integrated comprehensive usage of all 11 available MCP tools
+  - Added Grafana-specific development patterns and best practices
+
+- ✅ **New Helper Functions Implementation** - 4 new Grafana-specific helper functions:
+  - `getDashboardTypeSpecificInstructions` - Tailored instructions for monitoring, analytics, infrastructure, application, and business dashboards
+  - `getFormTypeSpecificInstructions` - Specialized guidance for authentication, settings, data-source, alert, and user-management forms
+  - `getDataSourceSpecificInstructions` - Data handling patterns for time-series, logs, metrics, traces, and JSON data
+  - `getInterfaceTypeSpecificInstructions` - Admin interface patterns for user management, plugin config, org settings, and data sources
+
+- ✅ **Enhanced Optimization Instructions** - Updated `getOptimizationInstructions` with Grafana-specific patterns:
+  - Added theming optimization category for Grafana's design system
+  - Enhanced performance patterns for monitoring and data visualization contexts
+  - Updated accessibility guidelines for dashboard and admin interfaces
+  - Improved responsive design patterns for observability interfaces
+
+**Architecture Enhancements:**
+
+- Complete migration from shadcn/ui ecosystem to Grafana UI ecosystem
+- All prompts now leverage the full suite of 11 Grafana UI MCP tools
+- Enhanced focus on observability, monitoring, and data visualization use cases
+- Comprehensive integration with Grafana's design system and theming
+- Professional prompt structure optimized for AI-assisted Grafana UI development
+
+**Quality Verification:**
+
+- ✅ TypeScript compilation successful with all prompt changes
+- ✅ All 11 MCP tools properly referenced in prompt instructions
+- ✅ No references to non-existent tools (shadcn/ui blocks removed)
+- ✅ Comprehensive coverage of Grafana UI development scenarios
+- ✅ Professional prompt structure aligned with MCP best practices
+
+**Files Modified in Phase 4:**
+
+- `src/prompts.ts` - **COMPLETE REWRITE** - Full transformation to Grafana UI focus with 5 new prompts and 4 new helper functions
+- All prompts now provide comprehensive guidance for Grafana UI development workflows
+
+**Next Steps (Phase 5):**
 
 - Create comprehensive test suite for all 11 tools
 - Implement integration tests for end-to-end functionality
