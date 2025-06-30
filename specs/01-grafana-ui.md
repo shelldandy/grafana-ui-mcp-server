@@ -405,7 +405,7 @@ export interface ColorTokens {
 
 **Phase 1 Implementation Summary:**
 
-- ✅ Package renamed to `@jpisnice/grafana-ui-mcp-server`
+- ✅ Package renamed to `@shelldandy/grafana-ui-mcp-server`
 - ✅ Binary command changed to `grafana-ui-mcp`
 - ✅ GitHub API integration migrated to `grafana/grafana` repository
 - ✅ Component discovery updated for `/packages/grafana-ui/src/components/` structure
@@ -546,7 +546,7 @@ The new architecture supports advanced features like design system integration, 
 
 **Completed Tasks:**
 
-- ✅ Package renamed to `@jpisnice/grafana-ui-mcp-server` v1.0.0
+- ✅ Package renamed to `@shelldandy/grafana-ui-mcp-server` v1.0.0
 - ✅ Binary command changed from `shadcn-mcp` to `grafana-ui-mcp`
 - ✅ GitHub API integration migrated from `shadcn-ui/ui` to `grafana/grafana`
 - ✅ Component discovery updated for Grafana's `/packages/grafana-ui/src/components/` structure
@@ -631,7 +631,7 @@ The new architecture supports advanced features like design system integration, 
   - Updated help text to showcase all 11 available tools (5 core + 6 Grafana-specific)
   - Added comprehensive tool descriptions and categorization
   - Enhanced GitHub API setup instructions with clear rate limit information
-  - Updated package name references to `@jpisnice/grafana-ui-mcp-server`
+  - Updated package name references to `@shelldandy/grafana-ui-mcp-server`
   - Improved version command with consistent "Grafana UI MCP Server" branding
 
 - ✅ **Complete README.md Transformation**:

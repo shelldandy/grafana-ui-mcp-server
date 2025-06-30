@@ -2,7 +2,7 @@
 
 This is a **Model Context Protocol (MCP) server** for shadcn/ui v4 components. It provides AI assistants with access to shadcn/ui component source code, demos, blocks, and metadata through the MCP protocol.
 
-- **Package**: `@jpisnice/shadcn-ui-mcp-server`
+- **Package**: `@shelldandy/shadcn-ui-mcp-server`
 - **Runtime**: Node.js 18+ (ESM modules)
 - **Language**: TypeScript with strict mode
 - **Architecture**: MCP server using [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk)
@@ -137,7 +137,7 @@ For Claude Desktop (`~/.config/Claude/claude_desktop_config.json`):
   "mcpServers": {
     "shadcn-ui": {
       "command": "npx",
-      "args": ["@jpisnice/shadcn-ui-mcp-server"],
+      "args": ["@shelldandy/shadcn-ui-mcp-server"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token"
       }

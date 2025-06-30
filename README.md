@@ -1,6 +1,6 @@
 # Grafana UI MCP Server
 
-[![npm version](https://badge.fury.io/js/@jpisnice%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@jpisnice/grafana-ui-mcp-server)
+[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy/grafana-ui-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to [Grafana UI](https://github.com/grafana/grafana/tree/main/packages/grafana-ui) components, documentation, stories, and design system tokens. This server enables AI tools like Claude Desktop, Continue.dev, and other MCP-compatible clients to retrieve and work with Grafana's React component library seamlessly.
@@ -43,20 +43,20 @@ The fastest way to get started - no installation required!
 
 ```bash
 # Basic usage (rate limited to 60 requests/hour)
-npx @jpisnice/grafana-ui-mcp-server
+npx @shelldandy/grafana-ui-mcp-server
 
 # With GitHub token for better rate limits (5000 requests/hour)
-npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 
 # Short form
-npx @jpisnice/grafana-ui-mcp-server -g ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server -g ghp_your_token_here
 
 # Using environment variable
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
-npx @jpisnice/grafana-ui-mcp-server
+npx @shelldandy/grafana-ui-mcp-server
 ```
 
-**🎯 Try it now**: Run `npx @jpisnice/grafana-ui-mcp-server --help` to see all options!
+**🎯 Try it now**: Run `npx @shelldandy/grafana-ui-mcp-server --help` to see all options!
 
 ### 🔧 Command Line Options
 
@@ -72,10 +72,10 @@ Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
 
 Examples:
-  npx @jpisnice/grafana-ui-mcp-server --help
-  npx @jpisnice/grafana-ui-mcp-server --version
-  npx @jpisnice/grafana-ui-mcp-server -g ghp_1234567890abcdef
-  GITHUB_PERSONAL_ACCESS_TOKEN=ghp_token npx @jpisnice/grafana-ui-mcp-server
+  npx @shelldandy/grafana-ui-mcp-server --help
+  npx @shelldandy/grafana-ui-mcp-server --version
+  npx @shelldandy/grafana-ui-mcp-server -g ghp_1234567890abcdef
+  GITHUB_PERSONAL_ACCESS_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
 ```
 
 ## 🔑 GitHub API Token Setup
@@ -105,7 +105,7 @@ Examples:
 
 **Method 1: Command Line (Quick testing)**
 ```bash
-npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 ```
 
 **Method 2: Environment Variable (Recommended)**
@@ -114,7 +114,7 @@ npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
 
 # Then simply run:
-npx @jpisnice/grafana-ui-mcp-server
+npx @shelldandy/grafana-ui-mcp-server
 ```
 
 **Method 3: Claude Desktop Configuration**
@@ -123,7 +123,7 @@ npx @jpisnice/grafana-ui-mcp-server
   "mcpServers": {
     "grafana-ui": {
       "command": "npx",
-      "args": ["@jpisnice/grafana-ui-mcp-server"],
+      "args": ["@shelldandy/grafana-ui-mcp-server"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
       }
@@ -136,10 +136,10 @@ npx @jpisnice/grafana-ui-mcp-server
 
 ```bash
 # Test without token (should show rate limit warning)
-npx @jpisnice/grafana-ui-mcp-server --help
+npx @shelldandy/grafana-ui-mcp-server --help
 
 # Test with token (should show success message)
-npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token --help
+npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token --help
 
 # Check your current rate limit
 curl -H "Authorization: token ghp_your_token" https://api.github.com/rate_limit
@@ -252,7 +252,7 @@ Add to your Claude Desktop configuration (`~/.config/Claude/claude_desktop_confi
   "mcpServers": {
     "grafana-ui": {
       "command": "npx",
-      "args": ["@jpisnice/grafana-ui-mcp-server", "--github-api-key", "ghp_your_token_here"]
+      "args": ["@shelldandy/grafana-ui-mcp-server", "--github-api-key", "ghp_your_token_here"]
     }
   }
 }
@@ -265,7 +265,7 @@ Or with environment variable:
   "mcpServers": {
     "grafana-ui": {
       "command": "npx",
-      "args": ["@jpisnice/grafana-ui-mcp-server"],
+      "args": ["@shelldandy/grafana-ui-mcp-server"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
       }
@@ -315,7 +315,7 @@ Plus access to:
 **"Rate limit exceeded" errors:**
 ```bash
 # Solution: Add GitHub API token
-npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 ```
 
 **"Component not found" errors:**
@@ -337,7 +337,7 @@ npx --version   # Should work
 # Set proxy if needed
 export HTTP_PROXY=http://your-proxy:8080
 export HTTPS_PROXY=http://your-proxy:8080
-npx @jpisnice/grafana-ui-mcp-server
+npx @shelldandy/grafana-ui-mcp-server
 ```
 
 ### Debug Mode
@@ -346,7 +346,7 @@ Enable verbose logging:
 
 ```bash
 # Set debug environment variable
-DEBUG=* npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token
+DEBUG=* npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token
 ```
 
 ## 🚀 Development
@@ -386,7 +386,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 🐛 [Report Issues](https://github.com/shelldandy/grafana-ui-mcp-server/issues)
 - 💬 [Discussions](https://github.com/shelldandy/grafana-ui-mcp-server/discussions)
 - 📖 [Documentation](https://github.com/shelldandy/grafana-ui-mcp-server#readme)
-- 📦 [npm Package](https://www.npmjs.com/package/@jpisnice/grafana-ui-mcp-server)
+- 📦 [npm Package](https://www.npmjs.com/package/@shelldandy/grafana-ui-mcp-server)
 
 ## 🔗 Related Projects
 
