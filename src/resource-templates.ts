@@ -11,27 +11,27 @@
  */
 export const resourceTemplates = [
   {
-    name: "get_install_script_for_component",
+    name: "get_grafana_ui_setup_script",
     description:
-      "Generate installation script for a specific shadcn/ui component based on package manager",
+      "Generate setup script for Grafana UI in a React project based on package manager",
     uriTemplate:
-      "resource-template:get_install_script_for_component?packageManager={packageManager}&component={component}",
+      "resource-template:get_grafana_ui_setup_script?packageManager={packageManager}&framework={framework}",
     contentType: "text/plain",
   },
   {
-    name: "get_installation_guide",
+    name: "get_component_usage_example",
     description:
-      "Get the installation guide for shadcn/ui based on framework and package manager",
+      "Get usage example for a specific Grafana UI component with import and basic implementation",
     uriTemplate:
-      "resource-template:get_installation_guide?framework={framework}&packageManager={packageManager}",
+      "resource-template:get_component_usage_example?component={component}&typescript={typescript}",
     contentType: "text/plain",
   },
 ];
 
 // Create a map for easier access in getResourceTemplate
 const resourceTemplateMap = {
-  get_install_script_for_component: resourceTemplates[0],
-  get_installation_guide: resourceTemplates[1],
+  get_grafana_ui_setup_script: resourceTemplates[0],
+  get_component_usage_example: resourceTemplates[1],
 };
 
 /**
@@ -51,253 +51,106 @@ function extractParam(uri: string, paramName: string): string | undefined {
  * @returns A function that generates the resource
  */
 export const getResourceTemplate = (uri: string) => {
-  // Component installation script template
-  if (uri.startsWith("resource-template:get_install_script_for_component")) {
+  // Grafana UI setup script template
+  if (uri.startsWith("resource-template:get_grafana_ui_setup_script")) {
     return async () => {
       try {
         const packageManager = extractParam(uri, "packageManager");
-        const component = extractParam(uri, "component");
+        const framework = extractParam(uri, "framework") || "react";
 
         if (!packageManager) {
           return {
             content:
-              "Missing packageManager parameter. Please specify npm, pnpm, or yarn.",
+              "Missing packageManager parameter. Please specify npm, pnpm, yarn, or bun.",
             contentType: "text/plain",
           };
         }
 
-        if (!component) {
-          return {
-            content:
-              "Missing component parameter. Please specify the component name.",
-            contentType: "text/plain",
-          };
-        }
-
-        // Generate installation script based on package manager
-        let installCommand: string;
-
-        switch (packageManager.toLowerCase()) {
-          case "npm":
-            installCommand = `npx shadcn@latest add ${component}`;
-            break;
-          case "pnpm":
-            installCommand = `pnpm dlx shadcn@latest add ${component}`;
-            break;
-          case "yarn":
-            installCommand = `yarn dlx shadcn@latest add ${component}`;
-            break;
-          case "bun":
-            installCommand = `bunx --bun shadcn@latest add ${component}`;
-            break;
-          default:
-            installCommand = `npx shadcn@latest add ${component}`;
-        }
+        // Generate setup script based on package manager and framework
+        const installCommand = getInstallCommand(packageManager, "@grafana/ui");
+        const devDepsCommand = getInstallCommand(packageManager, "@types/react @types/react-dom", true);
+        
+        const setupSteps = [
+          "# Grafana UI Setup Script",
+          "",
+          "# 1. Install Grafana UI and required dependencies",
+          installCommand,
+          "",
+          "# 2. Install TypeScript types (if using TypeScript)",
+          devDepsCommand,
+          "",
+          "# 3. Import and use Grafana UI components in your React app",
+          "# Example: import { Button, Alert } from '@grafana/ui';",
+          "",
+          "# 4. Wrap your app with ThemeProvider (optional but recommended)",
+          "# import { ThemeProvider } from '@grafana/ui';",
+          "# <ThemeProvider><App /></ThemeProvider>",
+          "",
+          "# 5. Import Grafana UI CSS (add to your main CSS/index.css)",
+          "# @import '~@grafana/ui/dist/index.css';",
+        ];
 
         return {
-          content: installCommand,
+          content: setupSteps.join("\n"),
           contentType: "text/plain",
         };
       } catch (error) {
         return {
-          content: `Error generating installation script: ${error instanceof Error ? error.message : String(error)}`,
+          content: `Error generating setup script: ${error instanceof Error ? error.message : String(error)}`,
           contentType: "text/plain",
         };
       }
     };
   }
 
-  // Installation guide template
-  if (uri.startsWith("resource-template:get_installation_guide")) {
+  // Component usage example template
+  if (uri.startsWith("resource-template:get_component_usage_example")) {
     return async () => {
       try {
-        const framework = extractParam(uri, "framework");
-        const packageManager = extractParam(uri, "packageManager");
+        const component = extractParam(uri, "component");
+        const typescript = extractParam(uri, "typescript") === "true";
 
-        if (!framework) {
+        if (!component) {
           return {
             content:
-              "Missing framework parameter. Please specify next, vite, remix, etc.",
+              "Missing component parameter. Please specify the Grafana UI component name.",
             contentType: "text/plain",
           };
         }
 
-        if (!packageManager) {
-          return {
-            content:
-              "Missing packageManager parameter. Please specify npm, pnpm, or yarn.",
-            contentType: "text/plain",
-          };
-        }
+        // Generate usage example for the component
+        const examples = getComponentExamples();
+        const componentKey = component.toLowerCase();
+        const example = examples[componentKey] || examples.default;
 
-        // Generate installation guide based on framework and package manager
-        const guides = {
-          next: {
-            description: "Installation guide for Next.js project",
-            steps: [
-              "Create a Next.js project if you don't have one already:",
-              `${packageManager} create next-app my-app`,
-              "",
-              "Navigate to your project directory:",
-              "cd my-app",
-              "",
-              "Add shadcn/ui to your project:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest init"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest init"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest init"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest init"
-                      : "npx shadcn-ui@latest init",
-              "",
-              "Follow the prompts to select your preferences",
-              "",
-              "Once initialized, you can add components:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest add button"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest add button"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest add button"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest add button"
-                      : "npx shadcn-ui@latest add button",
-              "",
-              "Now you can use the component in your project!",
-            ],
-          },
-          vite: {
-            description: "Installation guide for Vite project",
-            steps: [
-              "Create a Vite project if you don't have one already:",
-              `${packageManager}${packageManager === "npm" ? " create" : ""} vite my-app -- --template react-ts`,
-              "",
-              "Navigate to your project directory:",
-              "cd my-app",
-              "",
-              "Install dependencies:",
-              `${packageManager} ${packageManager === "npm" ? "install" : "add"} -D tailwindcss postcss autoprefixer`,
-              "",
-              "Initialize Tailwind CSS:",
-              "npx tailwindcss init -p",
-              "",
-              "Add shadcn/ui to your project:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest init"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest init"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest init"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest init"
-                      : "npx shadcn-ui@latest init",
-              "",
-              "Follow the prompts to select your preferences",
-              "",
-              "Once initialized, you can add components:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest add button"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest add button"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest add button"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest add button"
-                      : "npx shadcn-ui@latest add button",
-              "",
-              "Now you can use the component in your project!",
-            ],
-          },
-          remix: {
-            description: "Installation guide for Remix project",
-            steps: [
-              "Create a Remix project if you don't have one already:",
-              `${packageManager === "npm" ? "npx" : packageManager === "pnpm" ? "pnpm dlx" : packageManager === "yarn" ? "yarn dlx" : "bunx"} create-remix my-app`,
-              "",
-              "Navigate to your project directory:",
-              "cd my-app",
-              "",
-              "Install dependencies:",
-              `${packageManager} ${packageManager === "npm" ? "install" : "add"} -D tailwindcss postcss autoprefixer`,
-              "",
-              "Initialize Tailwind CSS:",
-              "npx tailwindcss init -p",
-              "",
-              "Add shadcn/ui to your project:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest init"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest init"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest init"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest init"
-                      : "npx shadcn-ui@latest init",
-              "",
-              "Follow the prompts to select your preferences",
-              "",
-              "Once initialized, you can add components:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest add button"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest add button"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest add button"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest add button"
-                      : "npx shadcn-ui@latest add button",
-              "",
-              "Now you can use the component in your project!",
-            ],
-          },
-          default: {
-            description: "Generic installation guide",
-            steps: [
-              "Make sure you have a React project set up",
-              "",
-              "Add shadcn/ui to your project:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest init"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest init"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest init"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest init"
-                      : "npx shadcn-ui@latest init",
-              "",
-              "Follow the prompts to select your preferences",
-              "",
-              "Once initialized, you can add components:",
-              packageManager === "npm"
-                ? "npx shadcn-ui@latest add button"
-                : packageManager === "pnpm"
-                  ? "pnpm dlx shadcn-ui@latest add button"
-                  : packageManager === "yarn"
-                    ? "yarn dlx shadcn-ui@latest add button"
-                    : packageManager === "bun"
-                      ? "bunx --bun shadcn-ui@latest add button"
-                      : "npx shadcn-ui@latest add button",
-              "",
-              "Now you can use the component in your project!",
-            ],
-          },
-        };
-
-        // Select appropriate guide based on framework
-        const guide =
-          guides[framework.toLowerCase() as keyof typeof guides] ||
-          guides.default;
+        const fileExtension = typescript ? "tsx" : "jsx";
+        const importStatement = `import { ${example.componentName} } from '@grafana/ui';`;
+        
+        const usageExample = [
+          `// ${example.componentName} Usage Example`,
+          "",
+          importStatement,
+          "",
+          typescript ? "interface Props {}" : "",
+          typescript ? "" : "",
+          typescript ? `const MyComponent: React.FC<Props> = () => {` : "const MyComponent = () => {",
+          "  return (",
+          "    <div>",
+          `      ${example.usage}`,
+          "    </div>",
+          "  );",
+          "};",
+          "",
+          "export default MyComponent;",
+        ].filter(line => line !== "").join("\n");
 
         return {
-          content: `# ${guide.description} with ${packageManager}\n\n${guide.steps.join("\n")}`,
+          content: usageExample,
           contentType: "text/plain",
         };
       } catch (error) {
         return {
-          content: `Error generating installation guide: ${error instanceof Error ? error.message : String(error)}`,
+          content: `Error generating component usage example: ${error instanceof Error ? error.message : String(error)}`,
           contentType: "text/plain",
         };
       }
@@ -306,3 +159,55 @@ export const getResourceTemplate = (uri: string) => {
 
   return undefined;
 };
+
+/**
+ * Helper function to generate install commands based on package manager
+ */
+function getInstallCommand(packageManager: string, packages: string, isDev = false): string {
+  const devFlag = isDev ? " -D" : "";
+  
+  switch (packageManager.toLowerCase()) {
+    case "npm":
+      return `npm install${devFlag} ${packages}`;
+    case "pnpm":
+      return `pnpm add${devFlag} ${packages}`;
+    case "yarn":
+      return `yarn add${devFlag} ${packages}`;
+    case "bun":
+      return `bun add${devFlag} ${packages}`;
+    default:
+      return `npm install${devFlag} ${packages}`;
+  }
+}
+
+/**
+ * Helper function to get component usage examples
+ */
+function getComponentExamples(): Record<string, { componentName: string; usage: string }> {
+  return {
+    button: {
+      componentName: "Button",
+      usage: `<Button variant="primary" size="md" onClick={() => console.log('clicked')}>\n        Click me\n      </Button>`
+    },
+    alert: {
+      componentName: "Alert",
+      usage: `<Alert title="Success" severity="success">\n        Operation completed successfully!\n      </Alert>`
+    },
+    input: {
+      componentName: "Input",
+      usage: `<Input\n        placeholder="Enter text..."\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n      />`
+    },
+    card: {
+      componentName: "Card",
+      usage: `<Card>\n        <Card.Heading>Card Title</Card.Heading>\n        <Card.Description>\n          This is a card description with some content.\n        </Card.Description>\n      </Card>`
+    },
+    table: {
+      componentName: "Table",
+      usage: `<Table width="100%" height={400}>\n        <thead>\n          <tr>\n            <th>Name</th>\n            <th>Value</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>Item 1</td>\n            <td>Value 1</td>\n          </tr>\n        </tbody>\n      </Table>`
+    },
+    default: {
+      componentName: "Button",
+      usage: `<Button variant="primary">\n        Default Example\n      </Button>`
+    }
+  };
+}
