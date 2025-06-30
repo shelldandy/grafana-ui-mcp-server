@@ -25,7 +25,7 @@ export interface PropDefinition {
 
 export interface ExportDefinition {
   name: string;
-  type: 'component' | 'type' | 'function' | 'const';
+  type: "component" | "type" | "function" | "const";
   isDefault?: boolean;
 }
 
@@ -42,18 +42,23 @@ export interface ImportDefinition {
  * @param code TypeScript source code
  * @returns ComponentMetadata object
  */
-export function parseComponentMetadata(componentName: string, code: string): ComponentMetadata {
+export function parseComponentMetadata(
+  componentName: string,
+  code: string,
+): ComponentMetadata {
   const imports = extractImportsFromCode(code);
   const exports = extractExportsFromCode(code);
   const dependencies = extractDependencies(code);
-  
+
   // Try to find props interface - look for ComponentProps pattern
   const propsInterfaceName = findPropsInterface(code, componentName);
-  const props = propsInterfaceName ? extractPropsFromCode(code, propsInterfaceName) : [];
-  
+  const props = propsInterfaceName
+    ? extractPropsFromCode(code, propsInterfaceName)
+    : [];
+
   // Extract description from JSDoc comments
   const description = extractComponentDescription(code, componentName);
-  
+
   return {
     name: componentName,
     description,
@@ -62,8 +67,8 @@ export function parseComponentMetadata(componentName: string, code: string): Com
     imports: parseImports(code),
     dependencies,
     hasTests: false, // Will be set by caller based on file structure
-    hasStories: false, // Will be set by caller based on file structure  
-    hasDocumentation: false // Will be set by caller based on file structure
+    hasStories: false, // Will be set by caller based on file structure
+    hasDocumentation: false, // Will be set by caller based on file structure
   };
 }
 
@@ -74,19 +79,23 @@ export function parseComponentMetadata(componentName: string, code: string): Com
  */
 export function extractImportsFromCode(code: string): string[] {
   const dependencies: string[] = [];
-  
+
   // Match import statements
   const importRegex = /import\s+.*?\s+from\s+['"]([@\w\/\-\.]+)['"]/g;
   let match;
-  
+
   while ((match = importRegex.exec(code)) !== null) {
     const dep = match[1];
     // Only include external dependencies (not relative imports)
-    if (!dep.startsWith('./') && !dep.startsWith('../') && !dep.startsWith('@/')) {
+    if (
+      !dep.startsWith("./") &&
+      !dep.startsWith("../") &&
+      !dep.startsWith("@/")
+    ) {
       dependencies.push(dep);
     }
   }
-  
+
   return [...new Set(dependencies)]; // Remove duplicates
 }
 
@@ -97,29 +106,31 @@ export function extractImportsFromCode(code: string): string[] {
  */
 export function extractExportsFromCode(code: string): string[] {
   const exports: string[] = [];
-  
+
   // Match export statements
   const exportRegexes = [
     /export\s+(?:type|interface)\s+(\w+)/g,
     /export\s+(?:const|let|var)\s+(\w+)/g,
     /export\s+(?:function)\s+(\w+)/g,
     /export\s+(?:class)\s+(\w+)/g,
-    /export\s+\{([^}]+)\}/g // Named exports
+    /export\s+\{([^}]+)\}/g, // Named exports
   ];
-  
-  exportRegexes.forEach(regex => {
+
+  exportRegexes.forEach((regex) => {
     let match;
     while ((match = regex.exec(code)) !== null) {
-      if (regex.source.includes('\\{')) {
+      if (regex.source.includes("\\{")) {
         // Handle named exports
-        const namedExports = match[1].split(',').map(exp => exp.trim().split(' as ')[0]);
+        const namedExports = match[1]
+          .split(",")
+          .map((exp) => exp.trim().split(" as ")[0]);
         exports.push(...namedExports);
       } else {
         exports.push(match[1]);
       }
     }
   });
-  
+
   return [...new Set(exports)]; // Remove duplicates
 }
 
@@ -129,89 +140,107 @@ export function extractExportsFromCode(code: string): string[] {
  * @param interfaceName Name of the interface to extract props from
  * @returns Array of prop definitions
  */
-export function extractPropsFromCode(code: string, interfaceName: string): PropDefinition[] {
+export function extractPropsFromCode(
+  code: string,
+  interfaceName: string,
+): PropDefinition[] {
   const props: PropDefinition[] = [];
-  
+
   // Find the interface definition
-  const interfaceRegex = new RegExp(`(?:type|interface)\\s+${interfaceName}\\s*=?\\s*\\{([^}]*)\\}`, 's');
+  const interfaceRegex = new RegExp(
+    `(?:type|interface)\\s+${interfaceName}\\s*=?\\s*\\{([^}]*)\\}`,
+    "s",
+  );
   const match = code.match(interfaceRegex);
-  
+
   if (!match) {
     return props;
   }
-  
+
   const interfaceBody = match[1];
-  
+
   // Extract each property
   const propRegex = /(\/\*\*\s*(.*?)\s*\*\/\s*)?(\w+)(\?)?:\s*([^;,\n]+)/g;
   let propMatch;
-  
+
   while ((propMatch = propRegex.exec(interfaceBody)) !== null) {
     const [, , comment, name, optional, type] = propMatch;
-    
+
     props.push({
       name,
       type: type.trim(),
       required: !optional,
       description: comment ? comment.trim() : undefined,
-      defaultValue: undefined // Could be extracted from default props or function parameters
+      defaultValue: undefined, // Could be extracted from default props or function parameters
     });
   }
-  
+
   // Also try simpler property extraction without JSDoc
   if (props.length === 0) {
     const simplePropRegex = /(\w+)(\?)?:\s*([^;,\n]+)/g;
     let simplePropMatch;
-    
+
     while ((simplePropMatch = simplePropRegex.exec(interfaceBody)) !== null) {
       const [, name, optional, type] = simplePropMatch;
-      
+
       // Check if there's a comment above this property
-      const lines = interfaceBody.split('\n');
-      const propLineIndex = lines.findIndex(line => line.includes(`${name}:`));
+      const lines = interfaceBody.split("\n");
+      const propLineIndex = lines.findIndex((line) =>
+        line.includes(`${name}:`),
+      );
       let description: string | undefined;
-      
+
       if (propLineIndex > 0) {
         const prevLine = lines[propLineIndex - 1].trim();
-        if (prevLine.startsWith('/**') || prevLine.startsWith('*') || prevLine.startsWith('//')) {
-          description = prevLine.replace(/\/\*\*|\*\/|\*|\/\//g, '').trim();
+        if (
+          prevLine.startsWith("/**") ||
+          prevLine.startsWith("*") ||
+          prevLine.startsWith("//")
+        ) {
+          description = prevLine.replace(/\/\*\*|\*\/|\*|\/\//g, "").trim();
         }
       }
-      
+
       props.push({
         name,
         type: type.trim(),
         required: !optional,
         description,
-        defaultValue: undefined
+        defaultValue: undefined,
       });
     }
   }
-  
+
   return props;
 }
 
 /**
  * Find the props interface name for a component
- * @param code TypeScript source code  
+ * @param code TypeScript source code
  * @param componentName Name of the component
  * @returns Props interface name if found
  */
-function findPropsInterface(code: string, componentName: string): string | null {
+function findPropsInterface(
+  code: string,
+  componentName: string,
+): string | null {
   // Common patterns for props interfaces
   const patterns = [
     `${componentName}Props`,
     `I${componentName}Props`,
     `${componentName}Properties`,
-    'CommonProps' // Fallback for some components
+    "CommonProps", // Fallback for some components
   ];
-  
+
   for (const pattern of patterns) {
-    if (code.includes(`type ${pattern}`) || code.includes(`interface ${pattern}`)) {
+    if (
+      code.includes(`type ${pattern}`) ||
+      code.includes(`interface ${pattern}`)
+    ) {
       return pattern;
     }
   }
-  
+
   return null;
 }
 
@@ -221,19 +250,25 @@ function findPropsInterface(code: string, componentName: string): string | null 
  * @param componentName Name of the component
  * @returns Component description if found
  */
-function extractComponentDescription(code: string, componentName: string): string | undefined {
+function extractComponentDescription(
+  code: string,
+  componentName: string,
+): string | undefined {
   // Look for JSDoc comment before component definition
-  const componentRegex = new RegExp(`/\\*\\*([^*]|\\*(?!/))*\\*/\\s*export\\s+const\\s+${componentName}`, 's');
+  const componentRegex = new RegExp(
+    `/\\*\\*([^*]|\\*(?!/))*\\*/\\s*export\\s+const\\s+${componentName}`,
+    "s",
+  );
   const match = code.match(componentRegex);
-  
+
   if (match) {
     return match[0]
-      .replace(/\/\*\*|\*\/|\*|/g, '')
+      .replace(/\/\*\*|\*\/|\*|/g, "")
       .trim()
-      .split('\n')[0]
+      .split("\n")[0]
       .trim();
   }
-  
+
   return undefined;
 }
 
@@ -244,44 +279,45 @@ function extractComponentDescription(code: string, componentName: string): strin
  */
 function parseImports(code: string): ImportDefinition[] {
   const imports: ImportDefinition[] = [];
-  const importRegex = /import\s+((?:\w+,\s*)?(?:\{[^}]*\}|\*\s+as\s+\w+|\w+))\s+from\s+['"]([^'"]+)['"]/g;
-  
+  const importRegex =
+    /import\s+((?:\w+,\s*)?(?:\{[^}]*\}|\*\s+as\s+\w+|\w+))\s+from\s+['"]([^'"]+)['"]/g;
+
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     const [, importSpec, module] = match;
-    
-    if (importSpec.includes('* as ')) {
+
+    if (importSpec.includes("* as ")) {
       // Namespace import
       const namespaceMatch = importSpec.match(/\*\s+as\s+(\w+)/);
       if (namespaceMatch) {
         imports.push({
           module,
           imports: [namespaceMatch[1]],
-          isNamespace: true
+          isNamespace: true,
         });
       }
-    } else if (importSpec.includes('{')) {
+    } else if (importSpec.includes("{")) {
       // Named imports
       const namedImports = importSpec
-        .replace(/[{}]/g, '')
-        .split(',')
-        .map(imp => imp.trim())
+        .replace(/[{}]/g, "")
+        .split(",")
+        .map((imp) => imp.trim())
         .filter(Boolean);
-      
+
       imports.push({
         module,
-        imports: namedImports
+        imports: namedImports,
       });
     } else {
       // Default import
       imports.push({
         module,
         imports: [importSpec.trim()],
-        isDefault: true
+        isDefault: true,
       });
     }
   }
-  
+
   return imports;
 }
 
@@ -291,10 +327,10 @@ function parseImports(code: string): ImportDefinition[] {
  * @returns Array of export definitions
  */
 function parseExports(exportNames: string[]): ExportDefinition[] {
-  return exportNames.map(name => ({
+  return exportNames.map((name) => ({
     name,
     type: inferExportType(name), // Simple heuristic-based type inference
-    isDefault: false // We don't handle default exports in this simple version
+    isDefault: false, // We don't handle default exports in this simple version
   }));
 }
 
@@ -303,17 +339,21 @@ function parseExports(exportNames: string[]): ExportDefinition[] {
  * @param name Export name
  * @returns Inferred export type
  */
-function inferExportType(name: string): ExportDefinition['type'] {
-  if (name.endsWith('Props') || name.endsWith('Type') || name.endsWith('Interface')) {
-    return 'type';
+function inferExportType(name: string): ExportDefinition["type"] {
+  if (
+    name.endsWith("Props") ||
+    name.endsWith("Type") ||
+    name.endsWith("Interface")
+  ) {
+    return "type";
   }
-  if (name[0] === name[0].toUpperCase() && !name.includes('_')) {
-    return 'component';
+  if (name[0] === name[0].toUpperCase() && !name.includes("_")) {
+    return "component";
   }
-  if (name.includes('_') || name.toUpperCase() === name) {
-    return 'const';
+  if (name.includes("_") || name.toUpperCase() === name) {
+    return "const";
   }
-  return 'function';
+  return "function";
 }
 
 /**
