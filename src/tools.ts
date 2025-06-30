@@ -4,21 +4,16 @@
  * This file defines the tools that can be called by the AI model through the MCP protocol.
  * Each tool has a schema that defines its parameters and a handler function that implements its logic.
  *
- * Updated for shadcn/ui v4 with improved error handling and cleaner implementation.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { axios } from "./utils/axios.js";
-import { parseMDXContent, parseMDXMetadata } from "./utils/mdx-parser.js";
+import { parseMDXContent } from "./utils/mdx-parser.js";
 import {
   parseStoryMetadata,
   extractStoryExamples,
 } from "./utils/story-parser.js";
-import {
-  parseComponentMetadata,
-  extractImportsFromCode,
-} from "./utils/component-parser.js";
 import {
   extractThemeTokens,
   extractThemeMetadata,
