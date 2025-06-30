@@ -68,8 +68,12 @@ export const getResourceTemplate = (uri: string) => {
 
         // Generate setup script based on package manager and framework
         const installCommand = getInstallCommand(packageManager, "@grafana/ui");
-        const devDepsCommand = getInstallCommand(packageManager, "@types/react @types/react-dom", true);
-        
+        const devDepsCommand = getInstallCommand(
+          packageManager,
+          "@types/react @types/react-dom",
+          true,
+        );
+
         const setupSteps = [
           "# Grafana UI Setup Script",
           "",
@@ -125,7 +129,7 @@ export const getResourceTemplate = (uri: string) => {
 
         const fileExtension = typescript ? "tsx" : "jsx";
         const importStatement = `import { ${example.componentName} } from '@grafana/ui';`;
-        
+
         const usageExample = [
           `// ${example.componentName} Usage Example`,
           "",
@@ -133,7 +137,9 @@ export const getResourceTemplate = (uri: string) => {
           "",
           typescript ? "interface Props {}" : "",
           typescript ? "" : "",
-          typescript ? `const MyComponent: React.FC<Props> = () => {` : "const MyComponent = () => {",
+          typescript
+            ? `const MyComponent: React.FC<Props> = () => {`
+            : "const MyComponent = () => {",
           "  return (",
           "    <div>",
           `      ${example.usage}`,
@@ -142,7 +148,9 @@ export const getResourceTemplate = (uri: string) => {
           "};",
           "",
           "export default MyComponent;",
-        ].filter(line => line !== "").join("\n");
+        ]
+          .filter((line) => line !== "")
+          .join("\n");
 
         return {
           content: usageExample,
@@ -163,9 +171,13 @@ export const getResourceTemplate = (uri: string) => {
 /**
  * Helper function to generate install commands based on package manager
  */
-function getInstallCommand(packageManager: string, packages: string, isDev = false): string {
+function getInstallCommand(
+  packageManager: string,
+  packages: string,
+  isDev = false,
+): string {
   const devFlag = isDev ? " -D" : "";
-  
+
   switch (packageManager.toLowerCase()) {
     case "npm":
       return `npm install${devFlag} ${packages}`;
@@ -183,31 +195,34 @@ function getInstallCommand(packageManager: string, packages: string, isDev = fal
 /**
  * Helper function to get component usage examples
  */
-function getComponentExamples(): Record<string, { componentName: string; usage: string }> {
+function getComponentExamples(): Record<
+  string,
+  { componentName: string; usage: string }
+> {
   return {
     button: {
       componentName: "Button",
-      usage: `<Button variant="primary" size="md" onClick={() => console.log('clicked')}>\n        Click me\n      </Button>`
+      usage: `<Button variant="primary" size="md" onClick={() => console.log('clicked')}>\n        Click me\n      </Button>`,
     },
     alert: {
       componentName: "Alert",
-      usage: `<Alert title="Success" severity="success">\n        Operation completed successfully!\n      </Alert>`
+      usage: `<Alert title="Success" severity="success">\n        Operation completed successfully!\n      </Alert>`,
     },
     input: {
       componentName: "Input",
-      usage: `<Input\n        placeholder="Enter text..."\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n      />`
+      usage: `<Input\n        placeholder="Enter text..."\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n      />`,
     },
     card: {
       componentName: "Card",
-      usage: `<Card>\n        <Card.Heading>Card Title</Card.Heading>\n        <Card.Description>\n          This is a card description with some content.\n        </Card.Description>\n      </Card>`
+      usage: `<Card>\n        <Card.Heading>Card Title</Card.Heading>\n        <Card.Description>\n          This is a card description with some content.\n        </Card.Description>\n      </Card>`,
     },
     table: {
       componentName: "Table",
-      usage: `<Table width="100%" height={400}>\n        <thead>\n          <tr>\n            <th>Name</th>\n            <th>Value</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>Item 1</td>\n            <td>Value 1</td>\n          </tr>\n        </tbody>\n      </Table>`
+      usage: `<Table width="100%" height={400}>\n        <thead>\n          <tr>\n            <th>Name</th>\n            <th>Value</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>Item 1</td>\n            <td>Value 1</td>\n          </tr>\n        </tbody>\n      </Table>`,
     },
     default: {
       componentName: "Button",
-      usage: `<Button variant="primary">\n        Default Example\n      </Button>`
-    }
+      usage: `<Button variant="primary">\n        Default Example\n      </Button>`,
+    },
   };
 }

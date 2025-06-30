@@ -36,15 +36,19 @@ const getGrafanaComponentsList = async () => {
   try {
     // Use existing GitHub API integration to get components dynamically
     const components = await axios.getAvailableComponents();
-    
+
     return {
-      content: JSON.stringify({
-        total: components.length,
-        components: components,
-        source: "@grafana/ui from grafana/grafana repository",
-        path: "/packages/grafana-ui/src/components/",
-        lastUpdated: new Date().toISOString()
-      }, null, 2),
+      content: JSON.stringify(
+        {
+          total: components.length,
+          components: components,
+          source: "@grafana/ui from grafana/grafana repository",
+          path: "/packages/grafana-ui/src/components/",
+          lastUpdated: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
       contentType: "application/json",
     };
   } catch (error) {
@@ -55,11 +59,27 @@ const getGrafanaComponentsList = async () => {
           error: "Failed to fetch Grafana UI components list",
           message: error instanceof Error ? error.message : String(error),
           fallback: [
-            "Alert", "Button", "Card", "Drawer", "EmptyState", "Field", 
-            "Form", "Icon", "IconButton", "Input", "LoadingPlaceholder", 
-            "Modal", "Select", "Spinner", "Table", "Tabs", "Text", 
-            "TextArea", "Tooltip", "VerticalGroup"
-          ]
+            "Alert",
+            "Button",
+            "Card",
+            "Drawer",
+            "EmptyState",
+            "Field",
+            "Form",
+            "Icon",
+            "IconButton",
+            "Input",
+            "LoadingPlaceholder",
+            "Modal",
+            "Select",
+            "Spinner",
+            "Table",
+            "Tabs",
+            "Text",
+            "TextArea",
+            "Tooltip",
+            "VerticalGroup",
+          ],
         },
         null,
         2,
@@ -76,33 +96,38 @@ const getGrafanaComponentsList = async () => {
 const getGrafanaUIInfo = async () => {
   try {
     return {
-      content: JSON.stringify({
-        name: "@grafana/ui",
-        description: "React component library for building interfaces that match the Grafana design system",
-        repository: "https://github.com/grafana/grafana",
-        componentsPath: "/packages/grafana-ui/src/components/",
-        documentation: "https://developers.grafana.com/ui/",
-        storybook: "https://developers.grafana.com/ui/storybook/",
-        npmPackage: "https://www.npmjs.com/package/@grafana/ui",
-        features: [
-          "Comprehensive React component library",
-          "TypeScript support with full type definitions",
-          "Consistent design system and theming",
-          "Accessibility-focused components",
-          "Rich documentation and Storybook examples",
-          "Optimized for data visualization and monitoring UIs"
-        ],
-        installation: {
-          npm: "npm install @grafana/ui",
-          yarn: "yarn add @grafana/ui",
-          pnpm: "pnpm add @grafana/ui",
-          bun: "bun add @grafana/ui"
+      content: JSON.stringify(
+        {
+          name: "@grafana/ui",
+          description:
+            "React component library for building interfaces that match the Grafana design system",
+          repository: "https://github.com/grafana/grafana",
+          componentsPath: "/packages/grafana-ui/src/components/",
+          documentation: "https://developers.grafana.com/ui/",
+          storybook: "https://developers.grafana.com/ui/storybook/",
+          npmPackage: "https://www.npmjs.com/package/@grafana/ui",
+          features: [
+            "Comprehensive React component library",
+            "TypeScript support with full type definitions",
+            "Consistent design system and theming",
+            "Accessibility-focused components",
+            "Rich documentation and Storybook examples",
+            "Optimized for data visualization and monitoring UIs",
+          ],
+          installation: {
+            npm: "npm install @grafana/ui",
+            yarn: "yarn add @grafana/ui",
+            pnpm: "pnpm add @grafana/ui",
+            bun: "bun add @grafana/ui",
+          },
+          basicUsage: {
+            import: "import { Button, Alert } from '@grafana/ui';",
+            example: "<Button variant='primary'>Click me</Button>",
+          },
         },
-        basicUsage: {
-          import: "import { Button, Alert } from '@grafana/ui';",
-          example: "<Button variant='primary'>Click me</Button>"
-        }
-      }, null, 2),
+        null,
+        2,
+      ),
       contentType: "application/json",
     };
   } catch (error) {
