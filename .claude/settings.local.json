@@ -9,7 +9,8 @@
       "Bash(./build/index.js --help)",
       "Bash(./build/index.js --version)",
       "Bash(sed:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
