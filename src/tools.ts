@@ -10,6 +10,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { axios } from './utils/axios.js';
+import { parseMDXContent, parseMDXMetadata } from './utils/mdx-parser.js';
+import { parseStoryMetadata, extractStoryExamples } from './utils/story-parser.js';
+import { parseComponentMetadata, extractImportsFromCode } from './utils/component-parser.js';
+import { extractThemeTokens, extractThemeMetadata, filterTokensByCategory } from './utils/theme-extractor.js';
 import { z } from "zod";
 
 /**
@@ -191,6 +195,243 @@ server.tool("get_directory_structure",
   }
 );
 
+// Tool: get_component_documentation - Get MDX documentation for a component
+server.tool("get_component_documentation",
+  'Get rich MDX documentation for a specific Grafana UI component',
+  { 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const mdxContent = await axios.getComponentDocumentation(componentName);
+      const parsedContent = parseMDXContent(componentName, mdxContent);
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({
+            title: parsedContent.title,
+            sections: parsedContent.sections.map(section => ({
+              title: section.title,
+              level: section.level,
+              content: section.content.substring(0, 500) + (section.content.length > 500 ? '...' : ''),
+              examples: section.examples.length
+            })),
+            totalExamples: parsedContent.examples.length,
+            imports: parsedContent.imports,
+            components: parsedContent.components
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get documentation for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_component_stories - Get Storybook stories for a component
+server.tool("get_component_stories",
+  'Get parsed Storybook stories with interactive examples for a Grafana UI component',
+  { 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const storyContent = await axios.getComponentDemo(componentName);
+      const storyMetadata = parseStoryMetadata(componentName, storyContent);
+      const examples = extractStoryExamples(storyContent);
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({
+            component: storyMetadata.componentName,
+            meta: storyMetadata.meta,
+            totalStories: storyMetadata.totalStories,
+            hasInteractiveStories: storyMetadata.hasInteractiveStories,
+            examples: examples.slice(0, 5), // Limit examples for response size
+            rawStoryCode: storyContent.substring(0, 1000) + (storyContent.length > 1000 ? '...' : '')
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get stories for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_component_tests - Get test files for a component
+server.tool("get_component_tests",
+  'Get test files showing usage patterns for a Grafana UI component',
+  { 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
+  },
+  async ({ componentName }) => {
+    try {
+      const testContent = await axios.getComponentTests(componentName);
+      
+      // Extract test patterns and usage examples
+      const testDescriptions = [];
+      const testRegex = /(describe|it|test)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+      let match;
+      
+      while ((match = testRegex.exec(testContent)) !== null) {
+        testDescriptions.push({
+          type: match[1],
+          description: match[2]
+        });
+      }
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({
+            component: componentName,
+            testDescriptions: testDescriptions.slice(0, 10),
+            totalTests: testDescriptions.filter(t => t.type === 'it' || t.type === 'test').length,
+            testCode: testContent.substring(0, 2000) + (testContent.length > 2000 ? '...' : '')
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get tests for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: search_components - Search components by name and description
+server.tool("search_components",
+  'Search Grafana UI components by name and optionally by documentation content',
+  { 
+    query: z.string().describe('Search query string'),
+    includeDescription: z.boolean().optional().describe('Whether to search in documentation content (default: false)')
+  },
+  async ({ query, includeDescription = false }) => {
+    try {
+      const searchResults = await axios.searchComponents(query, includeDescription);
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({
+            query,
+            includeDescription,
+            results: searchResults,
+            totalResults: searchResults.length
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to search components with query "${query}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_theme_tokens - Get Grafana design system tokens
+server.tool("get_theme_tokens",
+  'Get Grafana design system tokens and theme information',
+  { 
+    category: z.string().optional().describe('Token category to filter by (colors, typography, spacing, shadows, etc.)')
+  },
+  async ({ category }) => {
+    try {
+      const themeFiles = await axios.getThemeFiles(category);
+      
+      const processedThemes: any = {};
+      
+      for (const [themeName, themeContent] of Object.entries(themeFiles.themes)) {
+        if (typeof themeContent === 'string') {
+          const tokens = extractThemeTokens(themeContent);
+          const metadata = extractThemeMetadata(themeContent);
+          
+          processedThemes[themeName] = {
+            metadata,
+            tokens: category ? filterTokensByCategory(tokens, category) : tokens
+          };
+        }
+      }
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify({
+            category: category || 'all',
+            themes: processedThemes,
+            availableThemes: Object.keys(processedThemes)
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get theme tokens${category ? ` for category "${category}"` : ''}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
+// Tool: get_component_dependencies - Get component dependency analysis
+server.tool("get_component_dependencies",
+  'Get dependency tree analysis for a Grafana UI component',
+  { 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")'),
+    deep: z.boolean().optional().describe('Whether to analyze dependencies recursively (default: false)')
+  },
+  async ({ componentName, deep = false }) => {
+    try {
+      const dependencies = await axios.getComponentDependencies(componentName, deep);
+      
+      return {
+        content: [{ 
+          type: "text", 
+          text: JSON.stringify(dependencies, null, 2)
+        }]
+      };
+    } catch (error) {
+      if (error instanceof McpError) {
+        throw error;
+      }
+      
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to analyze dependencies for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+);
+
 
 // Export tools for backward compatibility
 export const tools = {
@@ -269,6 +510,97 @@ export const tools = {
       },
     },
   },
+  'get_component_documentation': {
+    name: 'get_component_documentation',
+    description: 'Get rich MDX documentation for a specific Grafana UI component',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        componentName: {
+          type: 'string',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
+        },
+      },
+      required: ['componentName'],
+    },
+  },
+  'get_component_stories': {
+    name: 'get_component_stories',
+    description: 'Get parsed Storybook stories with interactive examples for a Grafana UI component',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        componentName: {
+          type: 'string',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
+        },
+      },
+      required: ['componentName'],
+    },
+  },
+  'get_component_tests': {
+    name: 'get_component_tests',
+    description: 'Get test files showing usage patterns for a Grafana UI component',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        componentName: {
+          type: 'string',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
+        },
+      },
+      required: ['componentName'],
+    },
+  },
+  'search_components': {
+    name: 'search_components',
+    description: 'Search Grafana UI components by name and optionally by documentation content',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query string',
+        },
+        includeDescription: {
+          type: 'boolean',
+          description: 'Whether to search in documentation content (default: false)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  'get_theme_tokens': {
+    name: 'get_theme_tokens',
+    description: 'Get Grafana design system tokens and theme information',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: {
+          type: 'string',
+          description: 'Token category to filter by (colors, typography, spacing, shadows, etc.)',
+        },
+      },
+    },
+  },
+  'get_component_dependencies': {
+    name: 'get_component_dependencies',
+    description: 'Get dependency tree analysis for a Grafana UI component',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        componentName: {
+          type: 'string',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
+        },
+        deep: {
+          type: 'boolean',
+          description: 'Whether to analyze dependencies recursively (default: false)',
+        },
+      },
+      required: ['componentName'],
+    },
+  },
 };
 
 // Export tool handlers for backward compatibility
@@ -310,5 +642,94 @@ export const toolHandlers = {
       branch
     );
     return createSuccessResponse(directoryTree);
+  },
+  "get_component_documentation": async ({ componentName }: { componentName: string }) => {
+    const mdxContent = await axios.getComponentDocumentation(componentName);
+    const parsedContent = parseMDXContent(componentName, mdxContent);
+    
+    return createSuccessResponse({
+      title: parsedContent.title,
+      sections: parsedContent.sections.map(section => ({
+        title: section.title,
+        level: section.level,
+        content: section.content.substring(0, 500) + (section.content.length > 500 ? '...' : ''),
+        examples: section.examples.length
+      })),
+      totalExamples: parsedContent.examples.length,
+      imports: parsedContent.imports,
+      components: parsedContent.components
+    });
+  },
+  "get_component_stories": async ({ componentName }: { componentName: string }) => {
+    const storyContent = await axios.getComponentDemo(componentName);
+    const storyMetadata = parseStoryMetadata(componentName, storyContent);
+    const examples = extractStoryExamples(storyContent);
+    
+    return createSuccessResponse({
+      component: storyMetadata.componentName,
+      meta: storyMetadata.meta,
+      totalStories: storyMetadata.totalStories,
+      hasInteractiveStories: storyMetadata.hasInteractiveStories,
+      examples: examples.slice(0, 5),
+      rawStoryCode: storyContent.substring(0, 1000) + (storyContent.length > 1000 ? '...' : '')
+    });
+  },
+  "get_component_tests": async ({ componentName }: { componentName: string }) => {
+    const testContent = await axios.getComponentTests(componentName);
+    
+    const testDescriptions = [];
+    const testRegex = /(describe|it|test)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+    let match;
+    
+    while ((match = testRegex.exec(testContent)) !== null) {
+      testDescriptions.push({
+        type: match[1],
+        description: match[2]
+      });
+    }
+    
+    return createSuccessResponse({
+      component: componentName,
+      testDescriptions: testDescriptions.slice(0, 10),
+      totalTests: testDescriptions.filter(t => t.type === 'it' || t.type === 'test').length,
+      testCode: testContent.substring(0, 2000) + (testContent.length > 2000 ? '...' : '')
+    });
+  },
+  "search_components": async ({ query, includeDescription = false }: { query: string, includeDescription?: boolean }) => {
+    const searchResults = await axios.searchComponents(query, includeDescription);
+    
+    return createSuccessResponse({
+      query,
+      includeDescription,
+      results: searchResults,
+      totalResults: searchResults.length
+    });
+  },
+  "get_theme_tokens": async ({ category }: { category?: string }) => {
+    const themeFiles = await axios.getThemeFiles(category);
+    
+    const processedThemes: any = {};
+    
+    for (const [themeName, themeContent] of Object.entries(themeFiles.themes)) {
+      if (typeof themeContent === 'string') {
+        const tokens = extractThemeTokens(themeContent);
+        const metadata = extractThemeMetadata(themeContent);
+        
+        processedThemes[themeName] = {
+          metadata,
+          tokens: category ? filterTokensByCategory(tokens, category) : tokens
+        };
+      }
+    }
+    
+    return createSuccessResponse({
+      category: category || 'all',
+      themes: processedThemes,
+      availableThemes: Object.keys(processedThemes)
+    });
+  },
+  "get_component_dependencies": async ({ componentName, deep = false }: { componentName: string, deep?: boolean }) => {
+    const dependencies = await axios.getComponentDependencies(componentName, deep);
+    return createSuccessResponse(dependencies);
   },
 };

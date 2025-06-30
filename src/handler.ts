@@ -27,11 +27,23 @@ import { z } from "zod";
 
 // Define basic component schemas here for tool validation
 const componentSchema = { componentName: z.string() };
-const searchSchema = { query: z.string() };
-const themesSchema = { query: z.string().optional() };
-const blocksSchema = { 
-  query: z.string().optional(), 
+const componentWithTestsSchema = { componentName: z.string() };
+const componentWithDepthSchema = { 
+  componentName: z.string(), 
+  deep: z.boolean().optional() 
+};
+const searchSchema = { 
+  query: z.string(),
+  includeDescription: z.boolean().optional()
+};
+const themesSchema = { 
   category: z.string().optional() 
+};
+const directorySchema = {
+  path: z.string().optional(),
+  owner: z.string().optional(),
+  repo: z.string().optional(),
+  branch: z.string().optional()
 };
 
 /**
@@ -175,24 +187,29 @@ export const setupHandlers = (server: Server): void => {
 function getToolSchema(toolName: string): z.ZodType | undefined {
   try {
     switch(toolName) {
+      // Original tools
       case 'get_component':
-      case 'get_component_details':
+      case 'get_component_demo':
+      case 'get_component_metadata':
         return z.object(componentSchema);
         
-      case 'get_examples':
-        return z.object(componentSchema);
+      case 'get_directory_structure':
+        return z.object(directorySchema);
         
-      case 'get_usage':
-        return z.object(componentSchema);
+      // New Grafana-specific tools
+      case 'get_component_documentation':
+      case 'get_component_stories':
+      case 'get_component_tests':
+        return z.object(componentWithTestsSchema);
+        
+      case 'get_component_dependencies':
+        return z.object(componentWithDepthSchema);
         
       case 'search_components':
         return z.object(searchSchema);
         
-      case 'get_themes':
+      case 'get_theme_tokens':
         return z.object(themesSchema);
-        
-      case 'get_blocks':
-        return z.object(blocksSchema);
         
       default:
         return undefined;

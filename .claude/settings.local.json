@@ -10,7 +10,9 @@
       "Bash(./build/index.js --version)",
       "Bash(sed:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(timeout 5s npm run start)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

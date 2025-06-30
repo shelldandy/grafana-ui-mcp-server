@@ -393,6 +393,177 @@ async function getGitHubRateLimit(): Promise<any> {
         throw new Error(`Failed to get rate limit info: ${error.message}`);
     }
 }
+
+/**
+ * Fetch component test files from Grafana UI
+ * @param componentName Name of the component
+ * @returns Promise with component test code
+ */
+async function getComponentTests(componentName: string): Promise<string> {
+    const testPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.test.tsx`;
+    
+    try {
+        const response = await githubRaw.get(`/${testPath}`);
+        return response.data;
+    } catch (error) {
+        throw new Error(`Tests for component "${componentName}" not found in Grafana UI repository`);
+    }
+}
+
+/**
+ * Search components by name and description
+ * @param query Search query string
+ * @param includeDescription Whether to search in documentation content
+ * @returns Promise with filtered component list
+ */
+async function searchComponents(query: string, includeDescription: boolean = false): Promise<any[]> {
+    try {
+        const components = await getAvailableComponents();
+        const queryLower = query.toLowerCase();
+        
+        const filteredComponents = [];
+        
+        for (const component of components) {
+            let matches = false;
+            
+            // Check component name
+            if (component.toLowerCase().includes(queryLower)) {
+                matches = true;
+            }
+            
+            // Check description if requested
+            if (!matches && includeDescription) {
+                try {
+                    const metadata = await getComponentMetadata(component);
+                    if (metadata) {
+                        // Check if documentation exists and search in it
+                        if (metadata.hasDocumentation) {
+                            try {
+                                const docs = await getComponentDocumentation(component);
+                                if (docs.toLowerCase().includes(queryLower)) {
+                                    matches = true;
+                                }
+                            } catch (error) {
+                                // Ignore documentation fetch errors for search
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Ignore metadata fetch errors for search
+                }
+            }
+            
+            if (matches) {
+                filteredComponents.push({
+                    name: component,
+                    relevance: component.toLowerCase() === queryLower ? 1.0 : 
+                              component.toLowerCase().startsWith(queryLower) ? 0.8 : 0.5
+                });
+            }
+        }
+        
+        // Sort by relevance
+        return filteredComponents.sort((a, b) => b.relevance - a.relevance);
+    } catch (error) {
+        throw new Error(`Failed to search components: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * Fetch Grafana theme files
+ * @param category Optional category filter (colors, typography, spacing, etc.)
+ * @returns Promise with theme file content
+ */
+async function getThemeFiles(category?: string): Promise<any> {
+    const themePaths = [
+        'packages/grafana-ui/src/themes/light.ts',
+        'packages/grafana-ui/src/themes/dark.ts',
+        'packages/grafana-ui/src/themes/base.ts',
+        'packages/grafana-ui/src/themes/default.ts'
+    ];
+    
+    const themeFiles: any = {
+        category: category || 'all',
+        themes: {}
+    };
+    
+    for (const themePath of themePaths) {
+        try {
+            const response = await githubRaw.get(`/${themePath}`);
+            const themeName = themePath.split('/').pop()?.replace('.ts', '') || 'unknown';
+            themeFiles.themes[themeName] = response.data;
+        } catch (error) {
+            // Theme file doesn't exist, skip it
+            console.warn(`Theme file not found: ${themePath}`);
+        }
+    }
+    
+    return themeFiles;
+}
+
+/**
+ * Get component dependencies by analyzing imports
+ * @param componentName Name of the component
+ * @param deep Whether to analyze dependencies recursively
+ * @returns Promise with dependency tree
+ */
+async function getComponentDependencies(componentName: string, deep: boolean = false): Promise<any> {
+    try {
+        const componentSource = await getComponentSource(componentName);
+        
+        // Extract imports from component source
+        const importRegex = /import\s+.*?\s+from\s+['"]([@\w\/\-\.]+)['"]/g;
+        const dependencies: any = {
+            component: componentName,
+            dependencies: {
+                external: [],
+                internal: [],
+                grafanaUI: []
+            },
+            deep: deep
+        };
+        
+        let match;
+        while ((match = importRegex.exec(componentSource)) !== null) {
+            const dep = match[1];
+            
+            if (dep.startsWith('@grafana/ui')) {
+                dependencies.dependencies.grafanaUI.push(dep);
+            } else if (dep.startsWith('./') || dep.startsWith('../')) {
+                dependencies.dependencies.internal.push(dep);
+            } else if (!dep.startsWith('@/')) {
+                dependencies.dependencies.external.push(dep);
+            }
+        }
+        
+        // Remove duplicates
+        dependencies.dependencies.external = [...new Set(dependencies.dependencies.external)];
+        dependencies.dependencies.internal = [...new Set(dependencies.dependencies.internal)];
+        dependencies.dependencies.grafanaUI = [...new Set(dependencies.dependencies.grafanaUI)];
+        
+        // If deep analysis requested, analyze internal dependencies
+        if (deep && dependencies.dependencies.internal.length > 0) {
+            dependencies.deepDependencies = {};
+            
+            for (const internalDep of dependencies.dependencies.internal) {
+                try {
+                    // Convert relative path to component name
+                    const depComponentName = internalDep.replace(/^\.\//, '').replace(/\.tsx?$/, '');
+                    if (depComponentName && depComponentName !== componentName) {
+                        dependencies.deepDependencies[depComponentName] = await getComponentDependencies(depComponentName, false);
+                    }
+                } catch (error) {
+                    // Ignore errors for individual dependencies
+                    dependencies.deepDependencies[internalDep] = { error: 'Failed to analyze dependency' };
+                }
+            }
+        }
+        
+        return dependencies;
+    } catch (error) {
+        throw new Error(`Failed to analyze dependencies for component "${componentName}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
 export const axios = {
     githubRaw,
     githubApi,
@@ -404,6 +575,10 @@ export const axios = {
     getComponentMetadata,
     getComponentDocumentation,
     getComponentFiles,
+    getComponentTests,
+    searchComponents,
+    getThemeFiles,
+    getComponentDependencies,
     setGitHubApiKey,
     getGitHubRateLimit,
     // Path constants for easy access
