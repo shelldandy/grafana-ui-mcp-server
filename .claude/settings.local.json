@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npm test)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(./build/index.js --help)",
+      "Bash(./build/index.js --version)",
+      "Bash(sed:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

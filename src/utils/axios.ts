@@ -1,12 +1,11 @@
 import { Axios } from "axios";
 
-// Constants for the v4 repository structure
-const REPO_OWNER = 'shadcn-ui';
-const REPO_NAME = 'ui';
+// Constants for the Grafana UI repository structure
+const REPO_OWNER = 'grafana';
+const REPO_NAME = 'grafana';
 const REPO_BRANCH = 'main';
-const V4_BASE_PATH = 'apps/v4';
-const REGISTRY_PATH = `${V4_BASE_PATH}/registry`;
-const NEW_YORK_V4_PATH = `${REGISTRY_PATH}/new-york-v4`;
+const GRAFANA_UI_BASE_PATH = 'packages/grafana-ui/src';
+const COMPONENTS_PATH = `${GRAFANA_UI_BASE_PATH}/components`;
 
 // GitHub API for accessing repository structure and metadata
 const githubApi = new Axios({
@@ -14,7 +13,7 @@ const githubApi = new Axios({
     headers: {
         "Content-Type": "application/json",
         "Accept": "application/vnd.github+json",
-        "User-Agent": "Mozilla/5.0 (compatible; ShadcnUiMcpServer/1.0.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; GrafanaUiMcpServer/1.0.0)",
         ...(process.env.GITHUB_PERSONAL_ACCESS_TOKEN && {
             "Authorization": `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN}`
         })
@@ -33,94 +32,88 @@ const githubApi = new Axios({
 const githubRaw = new Axios({
     baseURL: `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}`,
     headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; ShadcnUiMcpServer/1.0.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; GrafanaUiMcpServer/1.0.0)",
     },
     timeout: 30000, // Increased from 15000 to 30000 (30 seconds)
     transformResponse: [(data) => data], // Return raw data
 });
 
 /**
- * Fetch component source code from the v4 registry
- * @param componentName Name of the component
+ * Fetch component source code from Grafana UI
+ * @param componentName Name of the component (e.g., "Button", "Alert")
  * @returns Promise with component source code
  */
 async function getComponentSource(componentName: string): Promise<string> {
-    const componentPath = `${NEW_YORK_V4_PATH}/ui/${componentName.toLowerCase()}.tsx`;
+    const componentPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.tsx`;
     
     try {
         const response = await githubRaw.get(`/${componentPath}`);
         return response.data;
     } catch (error) {
-        throw new Error(`Component "${componentName}" not found in v4 registry`);
+        throw new Error(`Component "${componentName}" not found in Grafana UI repository`);
     }
 }
 
 /**
- * Fetch component demo/example from the v4 registry
+ * Fetch component story/example from Grafana UI
  * @param componentName Name of the component
- * @returns Promise with component demo code
+ * @returns Promise with component story code
  */
 async function getComponentDemo(componentName: string): Promise<string> {
-    const demoPath = `${NEW_YORK_V4_PATH}/examples/${componentName.toLowerCase()}-demo.tsx`;
+    const storyPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.story.tsx`;
     
     try {
-        const response = await githubRaw.get(`/${demoPath}`);
+        const response = await githubRaw.get(`/${storyPath}`);
         return response.data;
     } catch (error) {
-        throw new Error(`Demo for component "${componentName}" not found in v4 registry`);
+        throw new Error(`Story for component "${componentName}" not found in Grafana UI repository`);
     }
 }
 
 /**
- * Fetch all available components from the registry
+ * Fetch all available components from Grafana UI
  * @returns Promise with list of component names
  */
 async function getAvailableComponents(): Promise<string[]> {
     try {
-        const response = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${NEW_YORK_V4_PATH}/ui`);
+        const response = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMPONENTS_PATH}`);
         return response.data
-            .filter((item: any) => item.type === 'file' && item.name.endsWith('.tsx'))
-            .map((item: any) => item.name.replace('.tsx', ''));
+            .filter((item: any) => item.type === 'dir')
+            .map((item: any) => item.name);
     } catch (error) {
-        throw new Error('Failed to fetch available components');
+        throw new Error('Failed to fetch available components from Grafana UI');
     }
 }
 
 /**
- * Fetch component metadata from the registry
+ * Fetch component files and extract basic metadata from Grafana UI
  * @param componentName Name of the component
  * @returns Promise with component metadata
  */
 async function getComponentMetadata(componentName: string): Promise<any> {
     try {
-        const response = await githubRaw.get(`/${REGISTRY_PATH}/registry-ui.ts`);
-        const registryContent = response.data;
+        // Get the component directory contents
+        const response = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMPONENTS_PATH}/${componentName}`);
         
-        // Parse component metadata using a more robust approach
-        const componentRegex = new RegExp(`{[^}]*name:\\s*["']${componentName}["'][^}]*}`, 'gs');
-        const match = registryContent.match(componentRegex);
-        
-        if (!match) {
+        if (!Array.isArray(response.data)) {
             return null;
         }
         
-        const componentData = match[0];
+        const files = response.data.map((item: any) => item.name);
         
-        // Extract metadata
-        const nameMatch = componentData.match(/name:\s*["']([^"']+)["']/);
-        const typeMatch = componentData.match(/type:\s*["']([^"']+)["']/);
-        const dependenciesMatch = componentData.match(/dependencies:\s*\[([^\]]*)\]/s);
-        const registryDepsMatch = componentData.match(/registryDependencies:\s*\[([^\]]*)\]/s);
-        
+        // Basic metadata from file structure
         return {
-            name: nameMatch?.[1] || componentName,
-            type: typeMatch?.[1] || 'registry:ui',
-            dependencies: dependenciesMatch?.[1] 
-                ? dependenciesMatch[1].split(',').map((dep: string) => dep.trim().replace(/["']/g, ''))
-                : [],
-            registryDependencies: registryDepsMatch?.[1]
-                ? registryDepsMatch[1].split(',').map((dep: string) => dep.trim().replace(/["']/g, ''))
-                : [],
+            name: componentName,
+            type: 'grafana-ui-component',
+            files: files,
+            hasImplementation: files.includes(`${componentName}.tsx`),
+            hasStories: files.some(file => file.endsWith('.story.tsx')),
+            hasDocumentation: files.includes(`${componentName}.mdx`),
+            hasTests: files.some(file => file.endsWith('.test.tsx')),
+            hasTypes: files.includes('types.ts'),
+            hasUtils: files.includes('utils.ts'),
+            hasStyles: files.includes('styles.ts'),
+            totalFiles: files.length
         };
     } catch (error) {
         console.error(`Error getting metadata for ${componentName}:`, error);
@@ -139,7 +132,7 @@ async function getComponentMetadata(componentName: string): Promise<any> {
 async function buildDirectoryTree(
     owner: string = REPO_OWNER,
     repo: string = REPO_NAME,
-    path: string = NEW_YORK_V4_PATH,
+    path: string = COMPONENTS_PATH,
     branch: string = REPO_BRANCH
 ): Promise<any> {
     try {
@@ -249,153 +242,38 @@ async function buildDirectoryTree(
 }
 
 /**
- * Provides a basic directory structure for v4 registry without API calls
+ * Provides a basic directory structure for Grafana UI components without API calls
  * This is used as a fallback when API rate limits are hit
  */
-function getBasicV4Structure(): any {
+function getBasicGrafanaUIStructure(): any {
     return {
-        path: NEW_YORK_V4_PATH,
+        path: COMPONENTS_PATH,
         type: 'directory',
         note: 'Basic structure provided due to API limitations',
+        description: 'Grafana UI components directory',
         children: {
-            'ui': {
-                path: `${NEW_YORK_V4_PATH}/ui`,
+            'Button': {
+                path: `${COMPONENTS_PATH}/Button`,
                 type: 'directory',
-                description: 'Contains all v4 UI components',
-                note: 'Component files (.tsx) are located here'
+                description: 'Button component with variants and sizes',
+                files: ['Button.tsx', 'Button.mdx', 'Button.story.tsx', 'Button.test.tsx']
             },
-            'examples': {
-                path: `${NEW_YORK_V4_PATH}/examples`,
-                type: 'directory', 
-                description: 'Contains component demo examples',
-                note: 'Demo files showing component usage'
-            },
-            'hooks': {
-                path: `${NEW_YORK_V4_PATH}/hooks`,
+            'Alert': {
+                path: `${COMPONENTS_PATH}/Alert`,
                 type: 'directory',
-                description: 'Contains custom React hooks'
+                description: 'Alert component for notifications',
+                files: ['Alert.tsx', 'Alert.mdx', 'Alert.test.tsx']
             },
-            'lib': {
-                path: `${NEW_YORK_V4_PATH}/lib`,
+            'Input': {
+                path: `${COMPONENTS_PATH}/Input`,
                 type: 'directory',
-                description: 'Contains utility libraries and functions'
+                description: 'Input components for forms',
+                files: ['Input.tsx', 'Input.mdx', 'Input.story.tsx']
             }
         }
     };
 }
 
-/**
- * Extract description from block code comments
- * @param code The source code to analyze
- * @returns Extracted description or null
- */
-function extractBlockDescription(code: string): string | null {
-    // Look for JSDoc comments or description comments
-    const descriptionRegex = /\/\*\*[\s\S]*?\*\/|\/\/\s*(.+)/;
-    const match = code.match(descriptionRegex);
-    if (match) {
-        // Clean up the comment
-        const description = match[0]
-            .replace(/\/\*\*|\*\/|\*|\/\//g, '')
-            .trim()
-            .split('\n')[0]
-            .trim();
-        return description.length > 0 ? description : null;
-    }
-    
-    // Look for component name as fallback
-    const componentRegex = /export\s+(?:default\s+)?function\s+(\w+)/;
-    const componentMatch = code.match(componentRegex);
-    if (componentMatch) {
-        return `${componentMatch[1]} - A reusable UI component`;
-    }
-    
-    return null;
-}
-
-/**
- * Extract dependencies from import statements
- * @param code The source code to analyze
- * @returns Array of dependency names
- */
-function extractDependencies(code: string): string[] {
-    const dependencies: string[] = [];
-    
-    // Match import statements
-    const importRegex = /import\s+.*?\s+from\s+['"]([@\w\/\-\.]+)['"]/g;
-    let match;
-    
-    while ((match = importRegex.exec(code)) !== null) {
-        const dep = match[1];
-        if (!dep.startsWith('./') && !dep.startsWith('../') && !dep.startsWith('@/')) {
-            dependencies.push(dep);
-        }
-    }
-    
-    return [...new Set(dependencies)]; // Remove duplicates
-}
-
-/**
- * Extract component usage from code
- * @param code The source code to analyze
- * @returns Array of component names used
- */
-function extractComponentUsage(code: string): string[] {
-    const components: string[] = [];
-    
-    // Extract from imports of components (assuming they start with capital letters)
-    const importRegex = /import\s+\{([^}]+)\}\s+from/g;
-    let match;
-    
-    while ((match = importRegex.exec(code)) !== null) {
-        const imports = match[1].split(',').map(imp => imp.trim());
-        imports.forEach(imp => {
-            if (imp[0] && imp[0] === imp[0].toUpperCase()) {
-                components.push(imp);
-            }
-        });
-    }
-    
-    // Also look for JSX components in the code
-    const jsxRegex = /<([A-Z]\w+)/g;
-    while ((match = jsxRegex.exec(code)) !== null) {
-        components.push(match[1]);
-    }
-    
-    return [...new Set(components)]; // Remove duplicates
-}
-
-/**
- * Generate usage instructions for complex blocks
- * @param blockName Name of the block
- * @param structure Structure information
- * @returns Usage instructions string
- */
-function generateComplexBlockUsage(blockName: string, structure: any[]): string {
-    const hasComponents = structure.some(item => item.name === 'components');
-    
-    let usage = `To use the ${blockName} block:\n\n`;
-    usage += `1. Copy the main files to your project:\n`;
-    
-    structure.forEach(item => {
-        if (item.type === 'file') {
-            usage += `   - ${item.name}\n`;
-        } else if (item.type === 'directory' && item.name === 'components') {
-            usage += `   - components/ directory (${item.count} files)\n`;
-        }
-    });
-    
-    if (hasComponents) {
-        usage += `\n2. Copy the components to your components directory\n`;
-        usage += `3. Update import paths as needed\n`;
-        usage += `4. Ensure all dependencies are installed\n`;
-    } else {
-        usage += `\n2. Update import paths as needed\n`;
-        usage += `3. Ensure all dependencies are installed\n`;
-    }
-    
-    return usage;
-}
 
 /**
  * Enhanced buildDirectoryTree with fallback for rate limits
@@ -403,16 +281,16 @@ function generateComplexBlockUsage(blockName: string, structure: any[]): string 
 async function buildDirectoryTreeWithFallback(
     owner: string = REPO_OWNER,
     repo: string = REPO_NAME,
-    path: string = NEW_YORK_V4_PATH,
+    path: string = COMPONENTS_PATH,
     branch: string = REPO_BRANCH
 ): Promise<any> {
     try {
         return await buildDirectoryTree(owner, repo, path, branch);
     } catch (error: any) {
-        // If it's a rate limit error and we're asking for the default v4 path, provide fallback
-        if (error.message && error.message.includes('rate limit') && path === NEW_YORK_V4_PATH) {
+        // If it's a rate limit error and we're asking for the default components path, provide fallback
+        if (error.message && error.message.includes('rate limit') && path === COMPONENTS_PATH) {
             console.warn('Using fallback directory structure due to rate limit');
-            return getBasicV4Structure();
+            return getBasicGrafanaUIStructure();
         }
         // Re-throw other errors
         throw error;
@@ -420,286 +298,68 @@ async function buildDirectoryTreeWithFallback(
 }
 
 /**
- * Fetch block code from the v4 blocks directory
- * @param blockName Name of the block (e.g., "calendar-01", "dashboard-01")
- * @param includeComponents Whether to include component files for complex blocks
- * @returns Promise with block code and structure
+ * Fetch component documentation from Grafana UI
+ * @param componentName Name of the component
+ * @returns Promise with component MDX documentation
  */
-async function getBlockCode(blockName: string, includeComponents: boolean = true): Promise<any> {
-    const blocksPath = `${NEW_YORK_V4_PATH}/blocks`;
+async function getComponentDocumentation(componentName: string): Promise<string> {
+    const docPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.mdx`;
     
     try {
-        // First, check if it's a simple block file (.tsx)
-        try {
-            const simpleBlockResponse = await githubRaw.get(`/${blocksPath}/${blockName}.tsx`);
-            if (simpleBlockResponse.status === 200) {
-                const code = simpleBlockResponse.data;
-                
-                // Extract useful information from the code
-                const description = extractBlockDescription(code);
-                const dependencies = extractDependencies(code);
-                const components = extractComponentUsage(code);
-                
-                return {
-                    name: blockName,
-                    type: 'simple',
-                    description: description || `Simple block: ${blockName}`,
-                    code: code,
-                    dependencies: dependencies,
-                    componentsUsed: components,
-                    size: code.length,
-                    lines: code.split('\n').length,
-                    usage: `Import and use directly in your application:\n\nimport { ${blockName.charAt(0).toUpperCase() + blockName.slice(1).replace(/-/g, '')} } from './blocks/${blockName}'`
-                };
-            }
-        } catch (error) {
-            // Continue to check for complex block directory
-        }
-        
-        // Check if it's a complex block directory
-        const directoryResponse = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${blocksPath}/${blockName}?ref=${REPO_BRANCH}`);
-        
-        if (!directoryResponse.data) {
-            throw new Error(`Block "${blockName}" not found`);
-        }
-        
-        const blockStructure: any = {
-            name: blockName,
-            type: 'complex',
-            description: `Complex block: ${blockName}`,
-            files: {},
-            structure: [],
-            totalFiles: 0,
-            dependencies: new Set(),
-            componentsUsed: new Set()
-        };
-        
-        // Process the directory contents
-        if (Array.isArray(directoryResponse.data)) {
-            blockStructure.totalFiles = directoryResponse.data.length;
-            
-            for (const item of directoryResponse.data) {
-                if (item.type === 'file') {
-                    // Get the main page file
-                    const fileResponse = await githubRaw.get(`/${item.path}`);
-                    const content = fileResponse.data;
-                    
-                    // Extract information from the file
-                    const description = extractBlockDescription(content);
-                    const dependencies = extractDependencies(content);
-                    const components = extractComponentUsage(content);
-                    
-                    blockStructure.files[item.name] = {
-                        path: item.name,
-                        content: content,
-                        size: content.length,
-                        lines: content.split('\n').length,
-                        description: description,
-                        dependencies: dependencies,
-                        componentsUsed: components
-                    };
-                    
-                    // Add to overall dependencies and components
-                    dependencies.forEach((dep: string) => blockStructure.dependencies.add(dep));
-                    components.forEach((comp: string) => blockStructure.componentsUsed.add(comp));
-                    
-                    blockStructure.structure.push({
-                        name: item.name,
-                        type: 'file',
-                        size: content.length,
-                        description: description || `${item.name} - Main block file`
-                    });
-                    
-                    // Use the first file's description as the block description if available
-                    if (description && blockStructure.description === `Complex block: ${blockName}`) {
-                        blockStructure.description = description;
-                    }
-                } else if (item.type === 'dir' && item.name === 'components' && includeComponents) {
-                    // Get component files
-                    const componentsResponse = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${item.path}?ref=${REPO_BRANCH}`);
-                    
-                    if (Array.isArray(componentsResponse.data)) {
-                        blockStructure.files.components = {};
-                        const componentStructure: any[] = [];
-                        
-                        for (const componentItem of componentsResponse.data) {
-                            if (componentItem.type === 'file') {
-                                const componentResponse = await githubRaw.get(`/${componentItem.path}`);
-                                const content = componentResponse.data;
-                                
-                                const dependencies = extractDependencies(content);
-                                const components = extractComponentUsage(content);
-                                
-                                blockStructure.files.components[componentItem.name] = {
-                                    path: `components/${componentItem.name}`,
-                                    content: content,
-                                    size: content.length,
-                                    lines: content.split('\n').length,
-                                    dependencies: dependencies,
-                                    componentsUsed: components
-                                };
-                                
-                                // Add to overall dependencies and components
-                                dependencies.forEach((dep: string) => blockStructure.dependencies.add(dep));
-                                components.forEach((comp: string) => blockStructure.componentsUsed.add(comp));
-                                
-                                componentStructure.push({
-                                    name: componentItem.name,
-                                    type: 'component',
-                                    size: content.length
-                                });
-                            }
-                        }
-                        
-                        blockStructure.structure.push({
-                            name: 'components',
-                            type: 'directory',
-                            files: componentStructure,
-                            count: componentStructure.length
-                        });
-                    }
-                }
-            }
-        }
-        
-        // Convert Sets to Arrays for JSON serialization
-        blockStructure.dependencies = Array.from(blockStructure.dependencies);
-        blockStructure.componentsUsed = Array.from(blockStructure.componentsUsed);
-        
-        // Add usage instructions
-        blockStructure.usage = generateComplexBlockUsage(blockName, blockStructure.structure);
-        
-        return blockStructure;
-        
-    } catch (error: any) {
-        if (error.response?.status === 404) {
-            throw new Error(`Block "${blockName}" not found. Available blocks can be found in the v4 blocks directory.`);
-        }
-        throw error;
+        const response = await githubRaw.get(`/${docPath}`);
+        return response.data;
+    } catch (error) {
+        throw new Error(`Documentation for component "${componentName}" not found in Grafana UI repository`);
     }
 }
 
 /**
- * Get all available blocks with categorization
- * @param category Optional category filter
- * @returns Promise with categorized block list
+ * Get component files from Grafana UI directory
+ * @param componentName Name of the component
+ * @returns Promise with all component files
  */
-async function getAvailableBlocks(category?: string): Promise<any> {
-    const blocksPath = `${NEW_YORK_V4_PATH}/blocks`;
-    
+async function getComponentFiles(componentName: string): Promise<any> {
     try {
-        const response = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${blocksPath}?ref=${REPO_BRANCH}`);
+        const response = await githubApi.get(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMPONENTS_PATH}/${componentName}`);
         
         if (!Array.isArray(response.data)) {
-            throw new Error('Unexpected response from GitHub API');
+            throw new Error(`Component directory "${componentName}" not found`);
         }
         
-        const blocks: any = {
-            calendar: [],
-            dashboard: [],
-            login: [],
-            sidebar: [],
-            products: [],
-            authentication: [],
-            charts: [],
-            mail: [],
-            music: [],
-            other: []
+        const componentFiles: any = {
+            name: componentName,
+            path: `${COMPONENTS_PATH}/${componentName}`,
+            files: {}
         };
         
+        // Fetch each file's content
         for (const item of response.data) {
-            const blockInfo: any = {
-                name: item.name.replace('.tsx', ''),
-                type: item.type === 'file' ? 'simple' : 'complex',
-                path: item.path,
-                size: item.size || 0,
-                lastModified: item.download_url ? 'Available' : 'Directory'
-            };
-            
-            // Add description based on name patterns
-            if (item.name.includes('calendar')) {
-                blockInfo.description = 'Calendar component for date selection and scheduling';
-                blocks.calendar.push(blockInfo);
-            } else if (item.name.includes('dashboard')) {
-                blockInfo.description = 'Dashboard layout with charts, metrics, and data display';
-                blocks.dashboard.push(blockInfo);
-            } else if (item.name.includes('login') || item.name.includes('signin')) {
-                blockInfo.description = 'Authentication and login interface';
-                blocks.login.push(blockInfo);
-            } else if (item.name.includes('sidebar')) {
-                blockInfo.description = 'Navigation sidebar component';
-                blocks.sidebar.push(blockInfo);
-            } else if (item.name.includes('products') || item.name.includes('ecommerce')) {
-                blockInfo.description = 'Product listing and e-commerce components';
-                blocks.products.push(blockInfo);
-            } else if (item.name.includes('auth')) {
-                blockInfo.description = 'Authentication related components';
-                blocks.authentication.push(blockInfo);
-            } else if (item.name.includes('chart') || item.name.includes('graph')) {
-                blockInfo.description = 'Data visualization and chart components';
-                blocks.charts.push(blockInfo);
-            } else if (item.name.includes('mail') || item.name.includes('email')) {
-                blockInfo.description = 'Email and mail interface components';
-                blocks.mail.push(blockInfo);
-            } else if (item.name.includes('music') || item.name.includes('player')) {
-                blockInfo.description = 'Music player and media components';
-                blocks.music.push(blockInfo);
-            } else {
-                blockInfo.description = `${item.name} - Custom UI block`;
-                blocks.other.push(blockInfo);
-            }
-        }
-        
-        // Sort blocks within each category
-        Object.keys(blocks).forEach(key => {
-            blocks[key].sort((a: any, b: any) => a.name.localeCompare(b.name));
-        });
-        
-        // Filter by category if specified
-        if (category) {
-            const categoryLower = category.toLowerCase();
-            if (blocks[categoryLower]) {
-                return {
-                    category,
-                    blocks: blocks[categoryLower],
-                    total: blocks[categoryLower].length,
-                    description: `${category.charAt(0).toUpperCase() + category.slice(1)} blocks available in shadcn/ui v4`,
-                    usage: `Use 'get_block' tool with the block name to get the full source code and implementation details.`
-                };
-            } else {
-                return {
-                    category,
-                    blocks: [],
-                    total: 0,
-                    availableCategories: Object.keys(blocks).filter(key => blocks[key].length > 0),
-                    suggestion: `Category '${category}' not found. Available categories: ${Object.keys(blocks).filter(key => blocks[key].length > 0).join(', ')}`
-                };
-            }
-        }
-        
-        // Calculate totals
-        const totalBlocks = Object.values(blocks).flat().length;
-        const nonEmptyCategories = Object.keys(blocks).filter(key => blocks[key].length > 0);
-        
-        return {
-            categories: blocks,
-            totalBlocks,
-            availableCategories: nonEmptyCategories,
-            summary: Object.keys(blocks).reduce((acc: any, key) => {
-                if (blocks[key].length > 0) {
-                    acc[key] = blocks[key].length;
+            if (item.type === 'file') {
+                try {
+                    const fileResponse = await githubRaw.get(`/${item.path}`);
+                    componentFiles.files[item.name] = {
+                        name: item.name,
+                        content: fileResponse.data,
+                        size: fileResponse.data.length,
+                        path: item.path
+                    };
+                } catch (error) {
+                    // If individual file fails, mark it as unavailable
+                    componentFiles.files[item.name] = {
+                        name: item.name,
+                        content: null,
+                        error: 'Failed to fetch file content',
+                        path: item.path
+                    };
                 }
-                return acc;
-            }, {}),
-            usage: "Use 'get_block' tool with a specific block name to get full source code and implementation details.",
-            examples: nonEmptyCategories.slice(0, 3).map(cat => 
-                blocks[cat][0] ? `${cat}: ${blocks[cat][0].name}` : ''
-            ).filter(Boolean)
-        };
+            }
+        }
+        
+        return componentFiles;
         
     } catch (error: any) {
         if (error.response?.status === 404) {
-            throw new Error('Blocks directory not found in the v4 registry');
+            throw new Error(`Component "${componentName}" not found in Grafana UI repository.`);
         }
         throw error;
     }
@@ -733,7 +393,6 @@ async function getGitHubRateLimit(): Promise<any> {
         throw new Error(`Failed to get rate limit info: ${error.message}`);
     }
 }
-
 export const axios = {
     githubRaw,
     githubApi,
@@ -743,8 +402,8 @@ export const axios = {
     getComponentDemo,
     getAvailableComponents,
     getComponentMetadata,
-    getBlockCode,
-    getAvailableBlocks,
+    getComponentDocumentation,
+    getComponentFiles,
     setGitHubApiKey,
     getGitHubRateLimit,
     // Path constants for easy access
@@ -752,8 +411,8 @@ export const axios = {
         REPO_OWNER,
         REPO_NAME,
         REPO_BRANCH,
-        V4_BASE_PATH,
-        REGISTRY_PATH,
-        NEW_YORK_V4_PATH
+        GRAFANA_UI_BASE_PATH,
+        COMPONENTS_PATH
     }
 }
+

@@ -42,15 +42,15 @@ function createErrorResponse(message: string, code: ErrorCode = ErrorCode.Intern
  * Define an MCP server for our tools
  */
 export const server = new McpServer({
-  name: "ShadcnUI v4 Tools",
-  version: "2.0.0"
+  name: "GrafanaUI Tools",
+  version: "1.0.0"
 });
 
 // Tool: get_component - Fetch component source code
 server.tool("get_component",
-  'Get the source code for a specific shadcn/ui v4 component',
+  'Get the source code for a specific Grafana UI component',
   { 
-    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
   },
   async ({ componentName }) => {
     try {
@@ -73,9 +73,9 @@ server.tool("get_component",
 
 // Tool: get_component_demo - Fetch component demo/example
 server.tool("get_component_demo",
-  'Get demo code illustrating how a shadcn/ui v4 component should be used',
+  'Get Storybook stories showing how a Grafana UI component should be used',
   { 
-    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
   },
   async ({ componentName }) => {
     try {
@@ -98,7 +98,7 @@ server.tool("get_component_demo",
 
 // Tool: list_components - Get all available components
 server.tool("list_components",
-  'Get all available shadcn/ui v4 components',
+  'Get all available Grafana UI components',
   {},
   async () => {
     try {
@@ -127,9 +127,9 @@ server.tool("list_components",
 
 // Tool: get_component_metadata - Get component metadata
 server.tool("get_component_metadata",
-  'Get metadata for a specific shadcn/ui v4 component',
+  'Get metadata for a specific Grafana UI component',
   { 
-    componentName: z.string().describe('Name of the shadcn/ui component (e.g., "accordion", "button")') 
+    componentName: z.string().describe('Name of the Grafana UI component (e.g., "Button", "Alert")') 
   },
   async ({ componentName }) => {
     try {
@@ -156,11 +156,11 @@ server.tool("get_component_metadata",
 
 // Tool: get_directory_structure - Get repository directory structure
 server.tool("get_directory_structure",
-  'Get the directory structure of the shadcn-ui v4 repository',
+  'Get the directory structure of the Grafana UI components',
   { 
-    path: z.string().optional().describe('Path within the repository (default: v4 registry)'),
-    owner: z.string().optional().describe('Repository owner (default: "shadcn-ui")'),
-    repo: z.string().optional().describe('Repository name (default: "ui")'),
+    path: z.string().optional().describe('Path within the repository (default: components directory)'),
+    owner: z.string().optional().describe('Repository owner (default: "grafana")'),
+    repo: z.string().optional().describe('Repository name (default: "grafana")'),
     branch: z.string().optional().describe('Branch name (default: "main")')
   },
   async ({ path, owner, repo, branch }) => {
@@ -168,7 +168,7 @@ server.tool("get_directory_structure",
       const directoryTree = await axios.buildDirectoryTree(
         owner || axios.paths.REPO_OWNER,
         repo || axios.paths.REPO_NAME,
-        path || axios.paths.NEW_YORK_V4_PATH,
+        path || axios.paths.COMPONENTS_PATH,
         branch || axios.paths.REPO_BRANCH
       );
       
@@ -191,74 +191,18 @@ server.tool("get_directory_structure",
   }
 );
 
-// Tool: get_block - Get specific block code from v4 registry
-server.tool("get_block",
-  'Get source code for a specific shadcn/ui v4 block (e.g., calendar-01, dashboard-01)',
-  { 
-    blockName: z.string().describe('Name of the block (e.g., "calendar-01", "dashboard-01", "login-02")'),
-    includeComponents: z.boolean().optional().describe('Whether to include component files for complex blocks (default: true)')
-  },
-  async ({ blockName, includeComponents = true }) => {
-    try {
-      const blockData = await axios.getBlockCode(blockName, includeComponents);
-      return {
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(blockData, null, 2)
-        }]
-      };
-    } catch (error) {
-      if (error instanceof McpError) {
-        throw error;
-      }
-      
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to get block "${blockName}": ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-);
-
-// Tool: list_blocks - Get all available blocks
-server.tool("list_blocks",
-  'Get all available shadcn/ui v4 blocks with categorization',
-  {
-    category: z.string().optional().describe('Filter by category (calendar, dashboard, login, sidebar, products)')
-  },
-  async ({ category }) => {
-    try {
-      const blocks = await axios.getAvailableBlocks(category);
-      return {
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(blocks, null, 2)
-        }]
-      };
-    } catch (error) {
-      if (error instanceof McpError) {
-        throw error;
-      }
-      
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to list blocks: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-);
 
 // Export tools for backward compatibility
 export const tools = {
   'get_component': {
     name: 'get_component',
-    description: 'Get the source code for a specific shadcn/ui v4 component',
+    description: 'Get the source code for a specific Grafana UI component',
     inputSchema: {
       type: 'object',
       properties: {
         componentName: {
           type: 'string',
-          description: 'Name of the shadcn/ui component (e.g., "accordion", "button")',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
         },
       },
       required: ['componentName'],
@@ -266,13 +210,13 @@ export const tools = {
   },
   'get_component_demo': {
     name: 'get_component_demo',
-    description: 'Get demo code illustrating how a shadcn/ui v4 component should be used',
+    description: 'Get Storybook stories showing how a Grafana UI component should be used',
     inputSchema: {
       type: 'object',
       properties: {
         componentName: {
           type: 'string',
-          description: 'Name of the shadcn/ui component (e.g., "accordion", "button")',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
         },
       },
       required: ['componentName'],
@@ -280,7 +224,7 @@ export const tools = {
   },
   'list_components': {
     name: 'list_components',
-    description: 'Get all available shadcn/ui v4 components',
+    description: 'Get all available Grafana UI components',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -288,13 +232,13 @@ export const tools = {
   },
   'get_component_metadata': {
     name: 'get_component_metadata',
-    description: 'Get metadata for a specific shadcn/ui v4 component',
+    description: 'Get metadata for a specific Grafana UI component',
     inputSchema: {
       type: 'object',
       properties: {
         componentName: {
           type: 'string',
-          description: 'Name of the shadcn/ui component (e.g., "accordion", "button")',
+          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
         },
       },
       required: ['componentName'],
@@ -302,56 +246,25 @@ export const tools = {
   },
   'get_directory_structure': {
     name: 'get_directory_structure',
-    description: 'Get the directory structure of the shadcn-ui v4 repository',
+    description: 'Get the directory structure of the Grafana UI components',
     inputSchema: {
       type: 'object',
       properties: {
         path: {
           type: 'string',
-          description: 'Path within the repository (default: v4 registry)',
+          description: 'Path within the repository (default: components directory)',
         },
         owner: {
           type: 'string',
-          description: 'Repository owner (default: "shadcn-ui")',
+          description: 'Repository owner (default: "grafana")',
         },
         repo: {
           type: 'string',
-          description: 'Repository name (default: "ui")',
+          description: 'Repository name (default: "grafana")',
         },
         branch: {
           type: 'string',
           description: 'Branch name (default: "main")',
-        },
-      },
-    },
-  },
-  'get_block': {
-    name: 'get_block',
-    description: 'Get source code for a specific shadcn/ui v4 block (e.g., calendar-01, dashboard-01)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        blockName: {
-          type: 'string',
-          description: 'Name of the block (e.g., "calendar-01", "dashboard-01", "login-02")',
-        },
-        includeComponents: {
-          type: 'boolean',
-          description: 'Whether to include component files for complex blocks (default: true)',
-        },
-      },
-      required: ['blockName'],
-    },
-  },
-  'list_blocks': {
-    name: 'list_blocks',
-    description: 'Get all available shadcn/ui v4 blocks with categorization',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        category: {
-          type: 'string',
-          description: 'Filter by category (calendar, dashboard, login, sidebar, products)',
         },
       },
     },
@@ -393,17 +306,9 @@ export const toolHandlers = {
     const directoryTree = await axios.buildDirectoryTree(
       owner,
       repo,
-      path || axios.paths.NEW_YORK_V4_PATH,
+      path || axios.paths.COMPONENTS_PATH,
       branch
     );
     return createSuccessResponse(directoryTree);
-  },
-  "get_block": async ({ blockName, includeComponents = true }: { blockName: string, includeComponents?: boolean }) => {
-    const blockData = await axios.getBlockCode(blockName, includeComponents);
-    return createSuccessResponse(blockData);
-  },
-  "list_blocks": async ({ category }: { category?: string }) => {
-    const blocks = await axios.getAvailableBlocks(category);
-    return createSuccessResponse(blocks);
   },
 };

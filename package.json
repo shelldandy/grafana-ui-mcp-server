@@ -1,11 +1,11 @@
 {
-  "name": "@jpisnice/shadcn-ui-mcp-server",
-  "version": "1.0.1",
-  "description": "A Model Context Protocol (MCP) server for shadcn/ui components, providing AI assistants with access to component source code, demos, blocks, and metadata.",
+  "name": "@jpisnice/grafana-ui-mcp-server",
+  "version": "1.0.0",
+  "description": "A Model Context Protocol (MCP) server for Grafana UI components, providing AI assistants with access to component source code, documentation, stories, and metadata.",
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "shadcn-mcp": "./build/index.js"
+    "grafana-ui-mcp": "./build/index.js"
   },
   "files": [
     "build/**/*",
@@ -24,23 +24,23 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "shadcn",
-    "shadcn-ui",
+    "grafana",
+    "grafana-ui",
     "ui-components",
     "react",
     "typescript",
     "ai-tools",
     "claude",
-    "copilot"
+    "design-system"
   ],
-  "author": "Janardhan Pollle <www.janardhanpolle@gmail.com>",
+  "author": "shelldandy",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jpisnice/shadcn-ui-mcp-server.git"
+    "url": "git+https://github.com/shelldandy/grafana-ui-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/Jpisnice/shadcn-ui-mcp-server/issues"
+    "url": "https://github.com/shelldandy/grafana-ui-mcp-server/issues"
   },
   "engines": {
     "node": ">=18.0.0"
