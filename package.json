@@ -43,7 +43,7 @@
     "dashboard",
     "monitoring"
   ],
-  "author": "shelldandy",
+  "author": "Miguel Palau <hola@mpz.im>",
   "license": "MIT",
   "repository": {
     "type": "git",
