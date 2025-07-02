@@ -44,6 +44,7 @@ Examples:
 
 Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
+  GITHUB_TOKEN                    Alternative way to provide GitHub token
 
 Available Tools (11 total):
   Core Tools:
@@ -104,6 +105,8 @@ For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
     githubApiKey = args[githubApiKeyIndex + 1];
   } else if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
     githubApiKey = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+  } else if (process.env.GITHUB_TOKEN) {
+    githubApiKey = process.env.GITHUB_TOKEN;
   }
 
   return { githubApiKey };
@@ -125,7 +128,7 @@ async function main() {
         "Warning: No GitHub API key provided. Rate limited to 60 requests/hour.",
       );
       console.error(
-        "Use --github-api-key flag or set GITHUB_PERSONAL_ACCESS_TOKEN environment variable.",
+        "Use --github-api-key flag or set GITHUB_PERSONAL_ACCESS_TOKEN or GITHUB_TOKEN environment variable.",
       );
     }
 

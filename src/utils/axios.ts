@@ -14,8 +14,8 @@ const githubApi = new Axios({
     "Content-Type": "application/json",
     Accept: "application/vnd.github+json",
     "User-Agent": "Mozilla/5.0 (compatible; GrafanaUiMcpServer/1.0.0)",
-    ...(process.env.GITHUB_PERSONAL_ACCESS_TOKEN && {
-      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN}`,
+    ...((process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_TOKEN) && {
+      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_TOKEN}`,
     }),
   },
   timeout: 30000, // Increased from 15000 to 30000 (30 seconds)
@@ -162,7 +162,7 @@ async function buildDirectoryTree(
       if (contents.message) {
         if (contents.message.includes("rate limit exceeded")) {
           throw new Error(
-            `GitHub API rate limit exceeded. ${contents.message} Consider setting GITHUB_PERSONAL_ACCESS_TOKEN environment variable for higher rate limits.`,
+            `GitHub API rate limit exceeded. ${contents.message} Consider setting GITHUB_PERSONAL_ACCESS_TOKEN or GITHUB_TOKEN environment variable for higher rate limits.`,
           );
         } else if (contents.message.includes("Not Found")) {
           throw new Error(
@@ -256,14 +256,14 @@ async function buildDirectoryTree(
       } else if (status === 403) {
         if (message.includes("rate limit")) {
           throw new Error(
-            `GitHub API rate limit exceeded: ${message} Consider setting GITHUB_PERSONAL_ACCESS_TOKEN environment variable for higher rate limits.`,
+            `GitHub API rate limit exceeded: ${message} Consider setting GITHUB_PERSONAL_ACCESS_TOKEN or GITHUB_TOKEN environment variable for higher rate limits.`,
           );
         } else {
           throw new Error(`Access forbidden: ${message}`);
         }
       } else if (status === 401) {
         throw new Error(
-          `Authentication failed. Please check your GITHUB_PERSONAL_ACCESS_TOKEN if provided.`,
+          `Authentication failed. Please check your GITHUB_PERSONAL_ACCESS_TOKEN or GITHUB_TOKEN if provided.`,
         );
       } else {
         throw new Error(`GitHub API error (${status}): ${message}`);

@@ -23,6 +23,10 @@ echo "3️⃣  With GitHub Token (environment variable):"
 echo "   export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here"
 echo "   npx grafana-ui-mcp-server"
 echo ""
+echo "   # Or using the common GITHUB_TOKEN variable:"
+echo "   export GITHUB_TOKEN=ghp_your_token_here"
+echo "   npx grafana-ui-mcp-server"
+echo ""
 
 # Claude Desktop integration
 echo "4️⃣  Claude Desktop Integration:"
@@ -47,6 +51,8 @@ echo '       "type": "mcp",'
 echo '       "command": "npx",'
 echo '       "args": ["grafana-ui-mcp-server"],'
 echo '       "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token"}'
+echo '       # Or using GITHUB_TOKEN:'
+echo '       "env": {"GITHUB_TOKEN": "ghp_your_token"}'
 echo '     }]'
 echo '   }'
 echo ""

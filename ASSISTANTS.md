@@ -124,8 +124,10 @@ Configuration methods:
 # Command line
 --github-api-key ghp_your_token
 
-# Environment variable
+# Environment variable (either option works)
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token
+# Or using the common GITHUB_TOKEN variable
+export GITHUB_TOKEN=ghp_your_token
 ```
 
 ### MCP Client Configuration
@@ -140,6 +142,8 @@ For Claude Desktop (`~/.config/Claude/claude_desktop_config.json`):
       "args": ["@shelldandy/shadcn-ui-mcp-server"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token"
+        // Or using GITHUB_TOKEN:
+        "GITHUB_TOKEN": "ghp_your_token"
       }
     }
   }

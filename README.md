@@ -1,6 +1,6 @@
 # Grafana UI MCP Server
 
-[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server)
+[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy/grafana-ui-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to [Grafana UI](https://github.com/grafana/grafana/tree/main/packages/grafana-ui) components, documentation, stories, and design system tokens. This server enables AI tools like Claude Desktop, Continue.dev, and other MCP-compatible clients to retrieve and work with Grafana's React component library seamlessly.
@@ -51,8 +51,12 @@ npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 # Short form
 npx @shelldandy/grafana-ui-mcp-server -g ghp_your_token_here
 
-# Using environment variable
+# Using environment variable (either option works)
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server
+
+# Or using the common GITHUB_TOKEN variable
+export GITHUB_TOKEN=ghp_your_token_here
 npx @shelldandy/grafana-ui-mcp-server
 ```
 
@@ -70,12 +74,14 @@ Options:
 
 Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
+  GITHUB_TOKEN                    Alternative way to provide GitHub token
 
 Examples:
   npx @shelldandy/grafana-ui-mcp-server --help
   npx @shelldandy/grafana-ui-mcp-server --version
   npx @shelldandy/grafana-ui-mcp-server -g ghp_1234567890abcdef
   GITHUB_PERSONAL_ACCESS_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
+  GITHUB_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
 ```
 
 ## 🔑 GitHub API Token Setup
