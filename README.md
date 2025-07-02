@@ -1,6 +1,6 @@
 # Grafana UI MCP Server
 
-[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy/grafana-ui-mcp-server)
+[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to [Grafana UI](https://github.com/grafana/grafana/tree/main/packages/grafana-ui) components, documentation, stories, and design system tokens. This server enables AI tools like Claude Desktop, Continue.dev, and other MCP-compatible clients to retrieve and work with Grafana's React component library seamlessly.
@@ -26,7 +26,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 - **`get_component_metadata`** - Get component props, exports, and metadata
 - **`get_directory_structure`** - Browse the Grafana UI repository structure
 
-### Advanced Grafana Tools (6) 
+### Advanced Grafana Tools (6)
 
 - **`get_component_documentation`** - Get rich MDX documentation with sections and examples
 - **`get_component_stories`** - Get parsed Storybook stories with interactive controls
@@ -65,7 +65,7 @@ grafana-ui-mcp [options]
 
 Options:
   --github-api-key, -g <token>    GitHub Personal Access Token
-  --help, -h                      Show help message  
+  --help, -h                      Show help message
   --version, -v                   Show version information
 
 Environment Variables:
@@ -81,6 +81,7 @@ Examples:
 ## 🔑 GitHub API Token Setup
 
 **Why do you need a token?**
+
 - Without token: Limited to 60 API requests per hour
 - With token: Up to 5,000 requests per hour
 - Better reliability and faster responses
@@ -89,9 +90,11 @@ Examples:
 ### 📝 Getting Your Token (2 minutes)
 
 1. **Go to GitHub Settings**:
+
    - Visit [GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens)
 
 2. **Generate New Token**:
+
    - Click "Generate new token (classic)"
    - Add a note: "Grafana UI MCP server"
    - **Expiration**: Choose your preference (90 days recommended)
@@ -104,11 +107,13 @@ Examples:
 ### 🚀 Using Your Token
 
 **Method 1: Command Line (Quick testing)**
+
 ```bash
 npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 ```
 
 **Method 2: Environment Variable (Recommended)**
+
 ```bash
 # Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
@@ -118,6 +123,7 @@ npx @shelldandy/grafana-ui-mcp-server
 ```
 
 **Method 3: Claude Desktop Configuration**
+
 ```json
 {
   "mcpServers": {
@@ -166,7 +172,7 @@ The MCP server provides these tools for AI assistants:
 
 // Get component metadata and props
 {
-  "tool": "get_component_metadata", 
+  "tool": "get_component_metadata",
   "arguments": { "componentName": "Alert" }
 }
 ```
@@ -205,9 +211,9 @@ The MCP server provides these tools for AI assistants:
 // Search components including documentation content
 {
   "tool": "search_components",
-  "arguments": { 
-    "query": "form validation", 
-    "includeDescription": true 
+  "arguments": {
+    "query": "form validation",
+    "includeDescription": true
   }
 }
 ```
@@ -236,9 +242,9 @@ The MCP server provides these tools for AI assistants:
 // Get deep dependency analysis
 {
   "tool": "get_component_dependencies",
-  "arguments": { 
-    "componentName": "DataTable", 
-    "deep": true 
+  "arguments": {
+    "componentName": "DataTable",
+    "deep": true
   }
 }
 ```
@@ -252,7 +258,11 @@ Add to your Claude Desktop configuration (`~/.config/Claude/claude_desktop_confi
   "mcpServers": {
     "grafana-ui": {
       "command": "npx",
-      "args": ["@shelldandy/grafana-ui-mcp-server", "--github-api-key", "ghp_your_token_here"]
+      "args": [
+        "@shelldandy/grafana-ui-mcp-server",
+        "--github-api-key",
+        "ghp_your_token_here"
+      ]
     }
   }
 }
@@ -304,6 +314,7 @@ The server provides access to 200+ Grafana UI components including:
 - **Advanced Components**: DatePicker, CodeEditor, Graph, Chart components
 
 Plus access to:
+
 - **Design System Tokens**: Complete color palettes, typography scales, spacing system
 - **Theme Files**: Light/dark mode configurations
 - **Utility Functions**: Helper functions and shared utilities
@@ -313,12 +324,14 @@ Plus access to:
 ### Common Issues
 
 **"Rate limit exceeded" errors:**
+
 ```bash
 # Solution: Add GitHub API token
 npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 ```
 
 **"Component not found" errors:**
+
 ```bash
 # Check available components first
 # Use list_components tool via your MCP client
@@ -326,6 +339,7 @@ npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 ```
 
 **"Command not found" errors:**
+
 ```bash
 # Solution: Install Node.js 18+ and ensure npx is available
 node --version  # Should be 18+
@@ -333,6 +347,7 @@ npx --version   # Should work
 ```
 
 **Network/proxy issues:**
+
 ```bash
 # Set proxy if needed
 export HTTP_PROXY=http://your-proxy:8080
