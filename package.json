@@ -1,6 +1,6 @@
 {
   "name": "grafana-ui-mcp-server",
-  "version": "0.0.0-1",
+  "version": "1.0.0-rc.0",
   "description": "A comprehensive Model Context Protocol (MCP) server for Grafana UI components. Provides AI assistants with complete access to 200+ React components, rich MDX documentation, Storybook stories, test files, design system tokens, and dependency analysis from the Grafana component library.",
   "type": "module",
   "main": "./build/index.js",
