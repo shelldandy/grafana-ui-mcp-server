@@ -1,6 +1,6 @@
 # Grafana UI MCP Server
 
-[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server)
+[![npm version](https://badge.fury.io/js/@shelldandy%2Fgrafana-ui-mcp-server.svg)](https://badge.fury.io/js/@shelldandy/grafana-ui-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to [Grafana UI](https://github.com/grafana/grafana/tree/main/packages/grafana-ui) components, documentation, stories, and design system tokens. This server enables AI tools like Claude Desktop, Continue.dev, and other MCP-compatible clients to retrieve and work with Grafana's React component library seamlessly.
