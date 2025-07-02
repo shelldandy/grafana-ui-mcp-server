@@ -13,7 +13,8 @@ export class Cache {
   private storage: Map<string, CacheItem<any>>;
   private defaultTTL: number;
 
-  private constructor(defaultTTL = 3600000) { // Default TTL: 1 hour
+  private constructor(defaultTTL = 3600000) {
+    // Default TTL: 1 hour
     this.storage = new Map();
     this.defaultTTL = defaultTTL;
   }
@@ -49,10 +50,10 @@ export class Cache {
    */
   public get<T>(key: string): T | null {
     const item = this.storage.get(key);
-    
+
     // Return null if the item doesn't exist
     if (!item) return null;
-    
+
     // Check if the item has expired
     const now = Date.now();
     if (item.ttl > 0 && now - item.timestamp > item.ttl) {
@@ -60,7 +61,7 @@ export class Cache {
       this.storage.delete(key);
       return null;
     }
-    
+
     return item.value as T;
   }
 
@@ -74,14 +75,14 @@ export class Cache {
   public async getOrFetch<T>(
     key: string,
     fetchFn: () => Promise<T>,
-    ttl = this.defaultTTL
+    ttl = this.defaultTTL,
   ): Promise<T> {
     const cachedValue = this.get<T>(key);
-    
+
     if (cachedValue !== null) {
       return cachedValue;
     }
-    
+
     // Value not in cache or expired, fetch it
     const value = await fetchFn();
     this.set(key, value, ttl);
@@ -96,13 +97,13 @@ export class Cache {
   public has(key: string): boolean {
     const item = this.storage.get(key);
     if (!item) return false;
-    
+
     const now = Date.now();
     if (item.ttl > 0 && now - item.timestamp > item.ttl) {
       this.storage.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
@@ -129,14 +130,14 @@ export class Cache {
   public clearExpired(): number {
     const now = Date.now();
     let deletedCount = 0;
-    
+
     this.storage.forEach((item, key) => {
       if (item.ttl > 0 && now - item.timestamp > item.ttl) {
         this.storage.delete(key);
         deletedCount++;
       }
     });
-    
+
     return deletedCount;
   }
 
@@ -147,14 +148,14 @@ export class Cache {
    */
   public deleteByPrefix(prefix: string): number {
     let deletedCount = 0;
-    
+
     this.storage.forEach((_, key) => {
       if (key.startsWith(prefix)) {
         this.storage.delete(key);
         deletedCount++;
       }
     });
-    
+
     return deletedCount;
   }
 
@@ -177,3 +178,303 @@ export class Cache {
 
 // Export a singleton instance
 export const cache = Cache.getInstance();
+
+/**
+ * Grafana UI specific cache utilities
+ */
+export class GrafanaUICache {
+  private cache: Cache;
+
+  // Cache TTL configurations for different types of data
+  private static readonly TTL = {
+    COMPONENT_LIST: 24 * 60 * 60 * 1000, // 24 hours - component list changes rarely
+    COMPONENT_SOURCE: 12 * 60 * 60 * 1000, // 12 hours - source code changes occasionally
+    COMPONENT_METADATA: 6 * 60 * 60 * 1000, // 6 hours - metadata changes occasionally
+    COMPONENT_STORIES: 6 * 60 * 60 * 1000, // 6 hours - stories change occasionally
+    COMPONENT_DOCS: 6 * 60 * 60 * 1000, // 6 hours - docs change occasionally
+    DIRECTORY_STRUCTURE: 24 * 60 * 60 * 1000, // 24 hours - directory structure changes rarely
+    RATE_LIMIT: 5 * 60 * 1000, // 5 minutes - rate limit info changes frequently
+    PARSED_METADATA: 12 * 60 * 60 * 1000, // 12 hours - parsed metadata is expensive to compute
+  };
+
+  constructor(cache: Cache) {
+    this.cache = cache;
+  }
+
+  /**
+   * Generate cache key for component source code
+   */
+  componentSourceKey(componentName: string): string {
+    return `component:${componentName}:source`;
+  }
+
+  /**
+   * Generate cache key for component metadata
+   */
+  componentMetadataKey(componentName: string): string {
+    return `component:${componentName}:metadata`;
+  }
+
+  /**
+   * Generate cache key for component stories
+   */
+  componentStoriesKey(componentName: string): string {
+    return `component:${componentName}:stories`;
+  }
+
+  /**
+   * Generate cache key for component documentation
+   */
+  componentDocsKey(componentName: string): string {
+    return `component:${componentName}:docs`;
+  }
+
+  /**
+   * Generate cache key for component files
+   */
+  componentFilesKey(componentName: string): string {
+    return `component:${componentName}:files`;
+  }
+
+  /**
+   * Generate cache key for parsed component metadata
+   */
+  componentParsedMetadataKey(componentName: string): string {
+    return `component:${componentName}:parsed-metadata`;
+  }
+
+  /**
+   * Generate cache key for component list
+   */
+  componentListKey(): string {
+    return "components:list";
+  }
+
+  /**
+   * Generate cache key for directory structure
+   */
+  directoryStructureKey(path?: string): string {
+    return `directory:${path || "components"}:structure`;
+  }
+
+  /**
+   * Generate cache key for rate limit info
+   */
+  rateLimitKey(): string {
+    return "github:rate-limit";
+  }
+
+  /**
+   * Cache component source code
+   */
+  async getOrFetchComponentSource(
+    componentName: string,
+    fetchFn: () => Promise<string>,
+  ): Promise<string> {
+    return this.cache.getOrFetch(
+      this.componentSourceKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_SOURCE,
+    );
+  }
+
+  /**
+   * Cache component metadata
+   */
+  async getOrFetchComponentMetadata(
+    componentName: string,
+    fetchFn: () => Promise<any>,
+  ): Promise<any> {
+    return this.cache.getOrFetch(
+      this.componentMetadataKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_METADATA,
+    );
+  }
+
+  /**
+   * Cache component stories
+   */
+  async getOrFetchComponentStories(
+    componentName: string,
+    fetchFn: () => Promise<string>,
+  ): Promise<string> {
+    return this.cache.getOrFetch(
+      this.componentStoriesKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_STORIES,
+    );
+  }
+
+  /**
+   * Cache component documentation
+   */
+  async getOrFetchComponentDocs(
+    componentName: string,
+    fetchFn: () => Promise<string>,
+  ): Promise<string> {
+    return this.cache.getOrFetch(
+      this.componentDocsKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_DOCS,
+    );
+  }
+
+  /**
+   * Cache component files
+   */
+  async getOrFetchComponentFiles(
+    componentName: string,
+    fetchFn: () => Promise<any>,
+  ): Promise<any> {
+    return this.cache.getOrFetch(
+      this.componentFilesKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_METADATA,
+    );
+  }
+
+  /**
+   * Cache parsed component metadata
+   */
+  async getOrFetchParsedMetadata(
+    componentName: string,
+    fetchFn: () => Promise<any>,
+  ): Promise<any> {
+    return this.cache.getOrFetch(
+      this.componentParsedMetadataKey(componentName),
+      fetchFn,
+      GrafanaUICache.TTL.PARSED_METADATA,
+    );
+  }
+
+  /**
+   * Cache component list
+   */
+  async getOrFetchComponentList(
+    fetchFn: () => Promise<string[]>,
+  ): Promise<string[]> {
+    return this.cache.getOrFetch(
+      this.componentListKey(),
+      fetchFn,
+      GrafanaUICache.TTL.COMPONENT_LIST,
+    );
+  }
+
+  /**
+   * Cache directory structure
+   */
+  async getOrFetchDirectoryStructure(
+    path: string,
+    fetchFn: () => Promise<any>,
+  ): Promise<any> {
+    return this.cache.getOrFetch(
+      this.directoryStructureKey(path),
+      fetchFn,
+      GrafanaUICache.TTL.DIRECTORY_STRUCTURE,
+    );
+  }
+
+  /**
+   * Cache rate limit info
+   */
+  async getOrFetchRateLimit(fetchFn: () => Promise<any>): Promise<any> {
+    return this.cache.getOrFetch(
+      this.rateLimitKey(),
+      fetchFn,
+      GrafanaUICache.TTL.RATE_LIMIT,
+    );
+  }
+
+  /**
+   * Invalidate all cache entries for a specific component
+   */
+  invalidateComponent(componentName: string): void {
+    const prefixes = [`component:${componentName}:`];
+
+    prefixes.forEach((prefix) => {
+      this.cache.deleteByPrefix(prefix);
+    });
+  }
+
+  /**
+   * Invalidate all component-related cache entries
+   */
+  invalidateAllComponents(): void {
+    this.cache.deleteByPrefix("component:");
+    this.cache.delete(this.componentListKey());
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): {
+    totalItems: number;
+    componentSourceCached: number;
+    componentMetadataCached: number;
+    componentStoriesCached: number;
+    componentDocsCached: number;
+    expiredItems: number;
+  } {
+    const totalItems = this.cache.size();
+
+    // Count different types of cached items
+    let componentSourceCached = 0;
+    let componentMetadataCached = 0;
+    let componentStoriesCached = 0;
+    let componentDocsCached = 0;
+
+    // This is a simple approximation - in a real implementation,
+    // we'd iterate through the cache keys to count by pattern
+    const estimatedItemsPerType = Math.floor(totalItems / 4);
+    componentSourceCached = estimatedItemsPerType;
+    componentMetadataCached = estimatedItemsPerType;
+    componentStoriesCached = estimatedItemsPerType;
+    componentDocsCached = estimatedItemsPerType;
+
+    const expiredItems = this.cache.clearExpired();
+
+    return {
+      totalItems,
+      componentSourceCached,
+      componentMetadataCached,
+      componentStoriesCached,
+      componentDocsCached,
+      expiredItems,
+    };
+  }
+
+  /**
+   * Warm up cache with commonly used components
+   */
+  async warmUp(
+    commonComponents: string[],
+    fetchFunctions: {
+      getComponentSource: (name: string) => Promise<string>;
+      getComponentMetadata: (name: string) => Promise<any>;
+      getComponentStories: (name: string) => Promise<string>;
+      getComponentDocs: (name: string) => Promise<string>;
+    },
+  ): Promise<void> {
+    const promises = commonComponents.flatMap((componentName) => [
+      this.getOrFetchComponentSource(componentName, () =>
+        fetchFunctions.getComponentSource(componentName),
+      ),
+      this.getOrFetchComponentMetadata(componentName, () =>
+        fetchFunctions.getComponentMetadata(componentName),
+      ),
+      this.getOrFetchComponentStories(componentName, () =>
+        fetchFunctions.getComponentStories(componentName),
+      ),
+      this.getOrFetchComponentDocs(componentName, () =>
+        fetchFunctions.getComponentDocs(componentName),
+      ),
+    ]);
+
+    // Execute all requests in parallel, but catch errors to prevent one failure from stopping others
+    await Promise.allSettled(promises);
+  }
+}
+
+// Export a singleton instance for Grafana UI cache
+export const grafanaUICache = new GrafanaUICache(cache);

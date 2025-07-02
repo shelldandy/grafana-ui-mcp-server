@@ -1,11 +1,11 @@
 {
-  "name": "@jpisnice/shadcn-ui-mcp-server",
-  "version": "1.0.1",
-  "description": "A Model Context Protocol (MCP) server for shadcn/ui components, providing AI assistants with access to component source code, demos, blocks, and metadata.",
+  "name": "grafana-ui-mcp-server",
+  "version": "0.0.0-1",
+  "description": "A comprehensive Model Context Protocol (MCP) server for Grafana UI components. Provides AI assistants with complete access to 200+ React components, rich MDX documentation, Storybook stories, test files, design system tokens, and dependency analysis from the Grafana component library.",
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "shadcn-mcp": "./build/index.js"
+    "grafana-ui-mcp": "./build/index.js"
   },
   "files": [
     "build/**/*",
@@ -13,7 +13,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x build/index.js",
     "clean": "rm -rf build",
     "prepublishOnly": "npm run clean && npm run build && chmod +x build/index.js",
     "start": "node build/index.js",
@@ -24,23 +24,33 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "shadcn",
-    "shadcn-ui",
+    "grafana",
+    "grafana-ui",
     "ui-components",
     "react",
     "typescript",
     "ai-tools",
     "claude",
-    "copilot"
+    "design-system",
+    "storybook",
+    "documentation",
+    "component-library",
+    "mdx",
+    "design-tokens",
+    "dependency-analysis",
+    "github-api",
+    "observability",
+    "dashboard",
+    "monitoring"
   ],
-  "author": "Janardhan Pollle <www.janardhanpolle@gmail.com>",
+  "author": "Miguel Palau <hola@mpz.im>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jpisnice/shadcn-ui-mcp-server.git"
+    "url": "git+https://github.com/shelldandy/grafana-ui-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/Jpisnice/shadcn-ui-mcp-server/issues"
+    "url": "https://github.com/shelldandy/grafana-ui-mcp-server/issues"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -48,7 +58,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.1.0",
     "axios": "^1.8.4",
-    "cheerio": "^1.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

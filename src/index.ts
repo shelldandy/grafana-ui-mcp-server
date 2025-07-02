@@ -1,33 +1,36 @@
 #!/usr/bin/env node
 /**
- * Shadcn UI v4 MCP Server
- * 
- * A Model Context Protocol server for shadcn/ui v4 components.
- * Provides AI assistants with access to component source code, demos, blocks, and metadata.
- * 
+ * Grafana UI MCP Server
+ *
+ * A Model Context Protocol server for Grafana UI components.
+ * Provides AI assistants with access to component source code, documentation, stories, and metadata.
+ *
  * Usage:
- *   npx shadcn-ui-mcp-server
- *   npx shadcn-ui-mcp-server --github-api-key YOUR_TOKEN
- *   npx shadcn-ui-mcp-server -g YOUR_TOKEN
+ *   npx @jpisnice/grafana-ui-mcp-server
+ *   npx @jpisnice/grafana-ui-mcp-server --github-api-key YOUR_TOKEN
+ *   npx @jpisnice/grafana-ui-mcp-server -g YOUR_TOKEN
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { setupHandlers } from './handler.js';
-import { axios } from './utils/axios.js';
+import { setupHandlers } from "./handler.js";
+import { axios } from "./utils/axios.js";
 
 /**
  * Parse command line arguments
  */
 async function parseArgs() {
   const args = process.argv.slice(2);
-  
+
   // Help flag
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`
-Shadcn UI v4 MCP Server
+Grafana UI MCP Server v1.0.0
+
+A Model Context Protocol server for Grafana UI components, providing AI assistants
+with comprehensive access to component source code, documentation, stories, and metadata.
 
 Usage:
-  npx shadcn-ui-mcp-server [options]
+  npx @jpisnice/grafana-ui-mcp-server [options]
 
 Options:
   --github-api-key, -g <token>    GitHub Personal Access Token for API access
@@ -35,43 +38,68 @@ Options:
   --version, -v                   Show version information
 
 Examples:
-  npx shadcn-ui-mcp-server
-  npx shadcn-ui-mcp-server --github-api-key ghp_your_token_here
-  npx shadcn-ui-mcp-server -g ghp_your_token_here
+  npx @jpisnice/grafana-ui-mcp-server
+  npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+  npx @jpisnice/grafana-ui-mcp-server -g ghp_your_token_here
 
 Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
 
-For more information, visit: https://github.com/yourusername/shadcn-ui-mcp-server
+Available Tools (11 total):
+  Core Tools:
+    • get_component              - Get component source code
+    • get_component_demo         - Get Storybook demo/usage examples
+    • list_components            - List all available components
+    • get_component_metadata     - Get component metadata and props
+    • get_directory_structure    - Browse repository structure
+    
+  Grafana-Specific Tools:
+    • get_component_documentation - Get rich MDX documentation
+    • get_component_stories      - Get parsed Storybook stories
+    • get_component_tests        - Get test files and usage patterns
+    • search_components          - Search components by name/description
+    • get_theme_tokens           - Get Grafana design system tokens
+    • get_component_dependencies - Get dependency tree analysis
+
+GitHub API Setup:
+  Without token: 60 requests/hour (rate limited)
+  With token:    5,000 requests/hour (recommended)
+  
+  Get your free token at: https://github.com/settings/tokens
+  Select 'public_repo' scope for optimal performance.
+
+For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
 `);
     process.exit(0);
   }
 
   // Version flag
-  if (args.includes('--version') || args.includes('-v')) {
+  if (args.includes("--version") || args.includes("-v")) {
     // Read version from package.json
     try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const { fileURLToPath } = await import('url');
-      
+      const fs = await import("fs");
+      const path = await import("path");
+      const { fileURLToPath } = await import("url");
+
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = path.dirname(__filename);
-      const packagePath = path.join(__dirname, '..', 'package.json');
-      
-      const packageContent = fs.readFileSync(packagePath, 'utf8');
+      const packagePath = path.join(__dirname, "..", "package.json");
+
+      const packageContent = fs.readFileSync(packagePath, "utf8");
       const packageJson = JSON.parse(packageContent);
-      console.log(`shadcn-ui-mcp-server v${packageJson.version}`);
+      console.log(`Grafana UI MCP Server v${packageJson.version}`);
     } catch (error) {
-      console.log('shadcn-ui-mcp-server v1.0.0');
+      console.log("Grafana UI MCP Server v1.0.0");
     }
     process.exit(0);
   }
 
   // GitHub API key
-  const githubApiKeyIndex = args.findIndex(arg => arg === '--github-api-key' || arg === '-g');
+  const githubApiKeyIndex = args.findIndex(
+    (arg) => arg === "--github-api-key" || arg === "-g",
+  );
   let githubApiKey = null;
-  
+
   if (githubApiKeyIndex !== -1 && args[githubApiKeyIndex + 1]) {
     githubApiKey = args[githubApiKeyIndex + 1];
   } else if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
@@ -91,25 +119,29 @@ async function main() {
     // Configure GitHub API key if provided
     if (githubApiKey) {
       axios.setGitHubApiKey(githubApiKey);
-      console.error('GitHub API key configured successfully');
+      console.error("GitHub API key configured successfully");
     } else {
-      console.error('Warning: No GitHub API key provided. Rate limited to 60 requests/hour.');
-      console.error('Use --github-api-key flag or set GITHUB_PERSONAL_ACCESS_TOKEN environment variable.');
+      console.error(
+        "Warning: No GitHub API key provided. Rate limited to 60 requests/hour.",
+      );
+      console.error(
+        "Use --github-api-key flag or set GITHUB_PERSONAL_ACCESS_TOKEN environment variable.",
+      );
     }
 
     // Initialize the MCP server with metadata and capabilities
     const server = new Server(
       {
-        name: "shadcn-ui-mcp-server",
+        name: "grafana-ui-mcp-server",
         version: "1.0.0",
       },
       {
         capabilities: {
-          resources: {},      // Will be filled with registered resources
-          prompts: {},        // Will be filled with registered prompts
-          tools: {},          // Will be filled with registered tools
+          resources: {}, // Will be filled with registered resources
+          prompts: {}, // Will be filled with registered prompts
+          tools: {}, // Will be filled with registered tools
         },
-      }
+      },
     );
 
     // Set up request handlers and register components (tools, resources, etc.)
@@ -118,16 +150,16 @@ async function main() {
     // Start server using stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    
-    console.error('Shadcn UI v4 MCP Server started successfully');
+
+    console.error("Grafana UI MCP Server started successfully");
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 }
 
 // Start the server
 main().catch((error) => {
-  console.error('Unhandled error:', error);
+  console.error("Unhandled error:", error);
   process.exit(1);
 });
