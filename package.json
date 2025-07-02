@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "grafana-ui-mcp": "./build/index.js"
+    "grafana-ui-mcp": "build/index.js"
   },
   "files": [
     "build/**/*",
