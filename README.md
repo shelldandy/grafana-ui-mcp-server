@@ -51,8 +51,12 @@ npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 # Short form
 npx @shelldandy/grafana-ui-mcp-server -g ghp_your_token_here
 
-# Using environment variable
+# Using environment variable (either option works)
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
+npx @shelldandy/grafana-ui-mcp-server
+
+# Or using the common GITHUB_TOKEN variable
+export GITHUB_TOKEN=ghp_your_token_here
 npx @shelldandy/grafana-ui-mcp-server
 ```
 
@@ -70,12 +74,14 @@ Options:
 
 Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
+  GITHUB_TOKEN                    Alternative way to provide GitHub token
 
 Examples:
   npx @shelldandy/grafana-ui-mcp-server --help
   npx @shelldandy/grafana-ui-mcp-server --version
   npx @shelldandy/grafana-ui-mcp-server -g ghp_1234567890abcdef
   GITHUB_PERSONAL_ACCESS_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
+  GITHUB_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
 ```
 
 ## 🔑 GitHub API Token Setup

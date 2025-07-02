@@ -109,6 +109,8 @@ npx shadcn-ui-mcp-server --github-api-key YOUR_TOKEN
     "command": "npx",
     "args": ["shadcn-ui-mcp-server"],
     "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_TOKEN"}
+    // Or using GITHUB_TOKEN:
+    "env": {"GITHUB_TOKEN": "YOUR_TOKEN"}
   }]
 }
 ```
