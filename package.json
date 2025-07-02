@@ -13,7 +13,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x build/index.js",
     "clean": "rm -rf build",
     "prepublishOnly": "npm run clean && npm run build && chmod +x build/index.js",
     "start": "node build/index.js",
