@@ -293,8 +293,9 @@ Or with environment variable:
 ## 🔗 Cursor Integration
 
 Add to your Cursor configuration file. Access this through:
-- **Windows/Linux**: `Ctrl+Shift+P` → "Preferences: Open Settings (JSON)" → Add to `mcp` section
-- **macOS**: `Cmd+Shift+P` → "Preferences: Open Settings (JSON)" → Add to `mcp` section
+
+- **Windows/Linux**: `Ctrl+Shift+P` → "View: MCP Settings" → New MCP Server
+- **macOS**: `Cmd+Shift+P` → "View: MCP Settings" → New MCP Server
 
 ### Method 1: With GitHub Token as Argument
 
