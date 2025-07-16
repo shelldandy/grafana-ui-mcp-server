@@ -16,24 +16,64 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 - **Advanced Search**: Search components by name and documentation content
 - **GitHub API Integration**: Efficient caching and intelligent rate limit handling
 
-## 📋 Available Tools (11 Total)
+## 🛠️ Unified Tool Interface
 
-### Core Component Tools (5)
+This MCP server provides a **single unified tool** called `grafana_ui` that consolidates all functionality through action-based routing. This reduces complexity and makes it easier for AI agents to understand and use.
 
+### 🎯 The `grafana_ui` Tool
+
+All operations are performed through one tool with an `action` parameter:
+
+```typescript
+{
+  "tool": "grafana_ui",
+  "arguments": {
+    "action": "get_component",
+    "componentName": "Button"
+  }
+}
+```
+
+### 📋 Available Actions (11 Total)
+
+**Core Component Actions:**
 - **`get_component`** - Get TypeScript source code for any Grafana UI component
-- **`get_component_demo`** - Get Storybook demo files showing component usage
+- **`get_demo`** - Get Storybook demo files showing component usage
 - **`list_components`** - List all available Grafana UI components
-- **`get_component_metadata`** - Get component props, exports, and metadata
-- **`get_directory_structure`** - Browse the Grafana UI repository structure
+- **`get_metadata`** - Get component props, exports, and metadata
+- **`get_directory`** - Browse the Grafana UI repository structure
 
-### Advanced Grafana Tools (6)
-
-- **`get_component_documentation`** - Get rich MDX documentation with sections and examples
-- **`get_component_stories`** - Get parsed Storybook stories with interactive controls
-- **`get_component_tests`** - Get test files showing usage patterns and edge cases
-- **`search_components`** - Search components by name and optionally by documentation content
+**Advanced Grafana Actions:**
+- **`get_documentation`** - Get rich MDX documentation with sections and examples
+- **`get_stories`** - Get parsed Storybook stories with interactive controls
+- **`get_tests`** - Get test files showing usage patterns and edge cases
+- **`search`** - Search components by name and optionally by documentation content
 - **`get_theme_tokens`** - Get Grafana design system tokens (colors, typography, spacing, etc.)
-- **`get_component_dependencies`** - Get component dependency tree analysis (shallow or deep)
+- **`get_dependencies`** - Get component dependency tree analysis (shallow or deep)
+
+### ✨ Benefits of the Unified Tool
+
+- **Simplified Integration**: Only one tool to configure in MCP clients
+- **Easier for AI Agents**: Reduced cognitive load with single entry point
+- **Better Context Management**: All functionality accessible through one interface
+- **Parameter Validation**: Comprehensive validation based on action type
+- **Future-Proof**: Easy to add new actions without breaking changes
+
+### 🔄 Migration from Previous Versions
+
+> **Breaking Change**: Version 2.0+ uses a unified tool interface. If you were using individual tools like `get_component`, `list_components`, etc., you now need to use the `grafana_ui` tool with an `action` parameter.
+
+**Before (v1.x):**
+```typescript
+{ "tool": "get_component", "arguments": { "componentName": "Button" } }
+```
+
+**After (v2.0+):**
+```typescript
+{ "tool": "grafana_ui", "arguments": { "action": "get_component", "componentName": "Button" } }
+```
+
+All functionality remains the same - only the interface has changed.
 
 ## 📦 Quick Start
 
@@ -159,27 +199,35 @@ curl -H "Authorization: token ghp_your_token" https://api.github.com/rate_limit
 
 ## 🛠️ Tool Usage Examples
 
-The MCP server provides these tools for AI assistants:
+The MCP server provides the unified `grafana_ui` tool for AI assistants:
 
 ### Basic Component Access
 
 ```typescript
 // Get Button component source code
 {
-  "tool": "get_component",
-  "arguments": { "componentName": "Button" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_component",
+    "componentName": "Button" 
+  }
 }
 
 // List all available components
 {
-  "tool": "list_components",
-  "arguments": {}
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "list_components"
+  }
 }
 
 // Get component metadata and props
 {
-  "tool": "get_component_metadata",
-  "arguments": { "componentName": "Alert" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_metadata",
+    "componentName": "Alert" 
+  }
 }
 ```
 
@@ -188,20 +236,29 @@ The MCP server provides these tools for AI assistants:
 ```typescript
 // Get rich MDX documentation for a component
 {
-  "tool": "get_component_documentation",
-  "arguments": { "componentName": "Button" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_documentation",
+    "componentName": "Button" 
+  }
 }
 
 // Get Storybook stories with interactive examples
 {
-  "tool": "get_component_stories",
-  "arguments": { "componentName": "Input" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_stories",
+    "componentName": "Input" 
+  }
 }
 
 // Get test files showing usage patterns
 {
-  "tool": "get_component_tests",
-  "arguments": { "componentName": "Modal" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_tests",
+    "componentName": "Modal" 
+  }
 }
 ```
 
@@ -210,14 +267,18 @@ The MCP server provides these tools for AI assistants:
 ```typescript
 // Search components by name
 {
-  "tool": "search_components",
-  "arguments": { "query": "button" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "search",
+    "query": "button" 
+  }
 }
 
 // Search components including documentation content
 {
-  "tool": "search_components",
+  "tool": "grafana_ui",
   "arguments": {
+    "action": "search",
     "query": "form validation",
     "includeDescription": true
   }
@@ -229,26 +290,35 @@ The MCP server provides these tools for AI assistants:
 ```typescript
 // Get all design system tokens
 {
-  "tool": "get_theme_tokens",
-  "arguments": {}
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_theme_tokens"
+  }
 }
 
 // Get specific token category (colors, typography, spacing, etc.)
 {
-  "tool": "get_theme_tokens",
-  "arguments": { "category": "colors" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_theme_tokens",
+    "category": "colors" 
+  }
 }
 
 // Get component dependencies (shallow)
 {
-  "tool": "get_component_dependencies",
-  "arguments": { "componentName": "Button" }
+  "tool": "grafana_ui",
+  "arguments": { 
+    "action": "get_dependencies",
+    "componentName": "Button" 
+  }
 }
 
 // Get deep dependency analysis
 {
-  "tool": "get_component_dependencies",
+  "tool": "grafana_ui",
   "arguments": {
+    "action": "get_dependencies",
     "componentName": "DataTable",
     "deep": true
   }
@@ -382,7 +452,7 @@ npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
 
 ```bash
 # Check available components first
-# Use list_components tool via your MCP client
+# Use grafana_ui tool with action: "list_components" via your MCP client
 # Component names are case-sensitive (e.g., "Button", not "button")
 ```
 
