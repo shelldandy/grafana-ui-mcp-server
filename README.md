@@ -290,6 +290,47 @@ Or with environment variable:
 }
 ```
 
+## 🔗 Cursor Integration
+
+Add to your Cursor configuration file. Access this through:
+- **Windows/Linux**: `Ctrl+Shift+P` → "Preferences: Open Settings (JSON)" → Add to `mcp` section
+- **macOS**: `Cmd+Shift+P` → "Preferences: Open Settings (JSON)" → Add to `mcp` section
+
+### Method 1: With GitHub Token as Argument
+
+```json
+{
+  "mcp": {
+    "grafana-ui": {
+      "command": "npx",
+      "args": [
+        "@shelldandy/grafana-ui-mcp-server",
+        "--github-api-key",
+        "ghp_your_token_here"
+      ]
+    }
+  }
+}
+```
+
+### Method 2: With Environment Variable (Recommended)
+
+```json
+{
+  "mcp": {
+    "grafana-ui": {
+      "command": "npx",
+      "args": ["@shelldandy/grafana-ui-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
+      }
+    }
+  }
+}
+```
+
+After adding the configuration, restart Cursor to enable the MCP server. You can then use the Grafana UI tools in your conversations with Cursor's AI assistant.
+
 ## 🏗️ Component Architecture
 
 Grafana UI components follow a rich multi-file structure:
