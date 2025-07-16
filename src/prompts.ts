@@ -159,12 +159,12 @@ REQUIREMENTS:
 
 INSTRUCTIONS:
 1. Use the MCP tools to explore available Grafana UI components:
-   - Use 'list_components' to see available components
-   - Use 'get_component' to fetch specific component implementations
-   - Use 'get_component_demo' to see component demos and examples
-   - Use 'get_component_documentation' for usage guidelines
-   - Use 'get_component_stories' to see interactive examples
-   - Use 'get_component_metadata' for component props and dependencies
+   - Use 'grafana_ui' with action 'list_components' to see available components
+   - Use 'grafana_ui' with action 'get_component' to fetch specific component implementations
+   - Use 'grafana_ui' with action 'get_demo' to see component demos and examples
+   - Use 'grafana_ui' with action 'get_documentation' for usage guidelines
+   - Use 'grafana_ui' with action 'get_stories' to see interactive examples
+   - Use 'grafana_ui' with action 'get_metadata' for component props and dependencies
 
 2. Build the dashboard following these principles:
    - Use Grafana UI components as building blocks
@@ -184,7 +184,7 @@ INSTRUCTIONS:
    - Implement refresh and time range controls
 
 5. Theming and Styling:
-   - Use 'get_theme_tokens' to access Grafana's design tokens
+   - Use 'grafana_ui' with action 'get_theme_tokens' to access Grafana's design tokens
    - Implement ${theme} theme support
    - Ensure proper contrast and readability
    - Follow Grafana's spacing and typography patterns
@@ -226,12 +226,12 @@ REQUIREMENTS:
 
 INSTRUCTIONS:
 1. Use the MCP tools to explore available Grafana UI form components:
-   - Use 'search_components' with query="form" to find form-related components
-   - Use 'get_component' to fetch Input, Select, Switch, Button components
-   - Use 'get_component_demo' to see form component examples
-   - Use 'get_component_documentation' for form usage guidelines
-   - Use 'get_component_stories' to see form component examples
-   - Use 'get_component_metadata' for component props and validation patterns
+   - Use 'grafana_ui' with action 'search' and query="form" to find form-related components
+   - Use 'grafana_ui' with action 'get_component' to fetch Input, Select, Switch, Button components
+   - Use 'grafana_ui' with action 'get_demo' to see form component examples
+   - Use 'grafana_ui' with action 'get_documentation' for form usage guidelines
+   - Use 'grafana_ui' with action 'get_stories' to see form component examples
+   - Use 'grafana_ui' with action 'get_metadata' for component props and validation patterns
 
 2. Build the form following these principles:
    - Use Grafana UI form components (Input, Select, Switch, etc.)
@@ -257,7 +257,7 @@ INSTRUCTIONS:
      .join("\n   ")}
 
 6. Accessibility and UX:
-   - Use 'get_theme_tokens' to access proper spacing and colors
+   - Use 'grafana_ui' with action 'get_theme_tokens' to access proper spacing and colors
    - Implement proper ARIA labels and descriptions
    - Add keyboard navigation support
    - Include clear validation feedback
@@ -294,13 +294,13 @@ REQUIREMENTS:
 
 INSTRUCTIONS:
 1. First, analyze the current component:
-   - Use 'get_component' to fetch the ${component} source code
-   - Use 'get_component_demo' to see component demos and usage examples
-   - Use 'get_component_documentation' to understand usage guidelines
-   - Use 'get_component_stories' to see current examples
-   - Use 'get_component_metadata' to understand props and interfaces
-   - Use 'get_component_dependencies' to understand the dependency tree
-   - Use 'get_component_tests' to see existing test patterns
+   - Use 'grafana_ui' with action 'get_component' to fetch the ${component} source code
+   - Use 'grafana_ui' with action 'get_demo' to see component demos and usage examples
+   - Use 'grafana_ui' with action 'get_documentation' to understand usage guidelines
+   - Use 'grafana_ui' with action 'get_stories' to see current examples
+   - Use 'grafana_ui' with action 'get_metadata' to understand props and interfaces
+   - Use 'grafana_ui' with action 'get_dependencies' to understand the dependency tree
+   - Use 'grafana_ui' with action 'get_tests' to see existing test patterns
 
 2. Optimization Strategy for ${optimization}:
    ${getOptimizationInstructions(optimization)}
@@ -319,7 +319,7 @@ INSTRUCTIONS:
    - Include usage examples demonstrating improvements
 
 5. Grafana-Specific Considerations:
-   - Use 'get_theme_tokens' to access design system tokens
+   - Use 'grafana_ui' with action 'get_theme_tokens' to access design system tokens
    - Ensure compatibility with Grafana's theming system
    - Consider plugin development requirements
    - Optimize for real-time data visualization contexts
@@ -361,12 +361,12 @@ REQUIREMENTS:
 
 INSTRUCTIONS:
 1. Explore visualization components:
-   - Use 'search_components' with query="table" or "chart" to find relevant components
-   - Use 'get_component' for Table, List, or other visualization components
-   - Use 'get_component_demo' to see component examples and usage patterns
-   - Use 'get_component_documentation' for data handling guidelines
-   - Use 'get_component_stories' to see data visualization examples
-   - Use 'get_component_metadata' for component props and data interfaces
+   - Use 'grafana_ui' with action 'search' and query="table" or "chart" to find relevant components
+   - Use 'grafana_ui' with action 'get_component' for Table, List, or other visualization components
+   - Use 'grafana_ui' with action 'get_demo' to see component examples and usage patterns
+   - Use 'grafana_ui' with action 'get_documentation' for data handling guidelines
+   - Use 'grafana_ui' with action 'get_stories' to see data visualization examples
+   - Use 'grafana_ui' with action 'get_metadata' for component props and data interfaces
 
 2. Visualization Structure:
    - Create a reusable ${visualizationType} component
@@ -397,7 +397,7 @@ INSTRUCTIONS:
      .join("\n   ")}
 
 5. Grafana-Specific Features:
-   - Use 'get_theme_tokens' to access proper colors and spacing
+   - Use 'grafana_ui' with action 'get_theme_tokens' to access proper colors and spacing
    - Implement time-based filtering (if applicable)
    - Add drill-down capabilities
    - Include proper data formatting and units
@@ -446,12 +446,12 @@ REQUIREMENTS:
 
 INSTRUCTIONS:
 1. Use the MCP tools to explore available Grafana UI components:
-   - Use 'search_components' with query="nav" or "menu" for navigation components
-   - Use 'get_component' to fetch Button, Card, Modal, and other UI components
-   - Use 'get_component_demo' to see component usage examples
-   - Use 'get_component_documentation' for admin interface patterns
-   - Use 'get_component_stories' to see component combinations
-   - Use 'get_component_metadata' for component props and interfaces
+   - Use 'grafana_ui' with action 'search' and query="nav" or "menu" for navigation components
+   - Use 'grafana_ui' with action 'get_component' to fetch Button, Card, Modal, and other UI components
+   - Use 'grafana_ui' with action 'get_demo' to see component usage examples
+   - Use 'grafana_ui' with action 'get_documentation' for admin interface patterns
+   - Use 'grafana_ui' with action 'get_stories' to see component combinations
+   - Use 'grafana_ui' with action 'get_metadata' for component props and interfaces
 
 2. Build the admin interface following these principles:
    - Use Grafana UI components for consistent design
@@ -485,7 +485,7 @@ INSTRUCTIONS:
    - Add proper form validation and feedback
 
 7. Grafana-Specific Considerations:
-   - Use 'get_theme_tokens' to access proper styling
+   - Use 'grafana_ui' with action 'get_theme_tokens' to access proper styling
    - Follow Grafana's admin panel design patterns
    - Include plugin management considerations (if applicable)
    - Add organization-scoped features

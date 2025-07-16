@@ -46,21 +46,28 @@ Environment Variables:
   GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
   GITHUB_TOKEN                    Alternative way to provide GitHub token
 
-Available Tools (11 total):
-  Core Tools:
-    • get_component              - Get component source code
-    • get_component_demo         - Get Storybook demo/usage examples
-    • list_components            - List all available components
-    • get_component_metadata     - Get component metadata and props
-    • get_directory_structure    - Browse repository structure
+Available Tool (Unified Interface):
+  Single Tool: grafana_ui
+    • Action-based routing with 11 available actions
+    • Comprehensive parameter validation
+    • Simplified interface for AI agents
     
-  Grafana-Specific Tools:
-    • get_component_documentation - Get rich MDX documentation
-    • get_component_stories      - Get parsed Storybook stories
-    • get_component_tests        - Get test files and usage patterns
-    • search_components          - Search components by name/description
-    • get_theme_tokens           - Get Grafana design system tokens
-    • get_component_dependencies - Get dependency tree analysis
+  Core Actions:
+    • get_component     - Get component source code
+    • get_demo          - Get Storybook demo/usage examples
+    • list_components   - List all available components
+    • get_metadata      - Get component metadata and props
+    • get_directory     - Browse repository structure
+    
+  Advanced Actions:
+    • get_documentation - Get rich MDX documentation
+    • get_stories       - Get parsed Storybook stories
+    • get_tests         - Get test files and usage patterns
+    • search            - Search components by name/description
+    • get_theme_tokens  - Get Grafana design system tokens
+    • get_dependencies  - Get dependency tree analysis
+    
+  Usage: { "tool": "grafana_ui", "arguments": { "action": "get_component", "componentName": "Button" } }
 
 GitHub API Setup:
   Without token: 60 requests/hour (rate limited)
