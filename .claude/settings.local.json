@@ -18,7 +18,8 @@
       "Bash(awk:*)",
       "Bash(npm run start:*)",
       "Bash(git rm:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

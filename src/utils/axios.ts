@@ -14,7 +14,8 @@ const githubApi = new Axios({
     "Content-Type": "application/json",
     Accept: "application/vnd.github+json",
     "User-Agent": "Mozilla/5.0 (compatible; GrafanaUiMcpServer/1.0.0)",
-    ...((process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_TOKEN) && {
+    ...((process.env.GITHUB_PERSONAL_ACCESS_TOKEN ||
+      process.env.GITHUB_TOKEN) && {
       Authorization: `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_TOKEN}`,
     }),
   },
