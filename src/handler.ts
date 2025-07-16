@@ -18,13 +18,12 @@ import {
 import { type Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { resourceHandlers, resources } from "./resources.js";
 import { promptHandlers, prompts } from "./prompts.js";
-import { toolHandlers, tools, server as mcpServer, unifiedToolSchema } from "./tools.js";
+import { toolHandlers, tools, unifiedToolSchema } from "./tools.js";
 import {
   getResourceTemplate,
   resourceTemplates,
 } from "./resource-templates.js";
 import { z } from "zod";
-
 
 /**
  * Sets up all request handlers for the MCP server

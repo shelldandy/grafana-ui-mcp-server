@@ -62,7 +62,7 @@ export const server = new McpServer({
 const unifiedToolSchemaRaw = {
   action: z.enum([
     "get_component",
-    "get_demo", 
+    "get_demo",
     "list_components",
     "get_metadata",
     "get_directory",
@@ -71,7 +71,7 @@ const unifiedToolSchemaRaw = {
     "get_tests",
     "search",
     "get_theme_tokens",
-    "get_dependencies"
+    "get_dependencies",
   ]),
   componentName: z.string().optional(),
   query: z.string().optional(),
@@ -85,52 +85,57 @@ const unifiedToolSchemaRaw = {
 };
 
 // Unified tool schema with validation for handler.ts
-const unifiedToolSchema = z.object({
-  action: z.enum([
-    "get_component",
-    "get_demo", 
-    "list_components",
-    "get_metadata",
-    "get_directory",
-    "get_documentation",
-    "get_stories",
-    "get_tests",
-    "search",
-    "get_theme_tokens",
-    "get_dependencies"
-  ]),
-  componentName: z.string().optional(),
-  query: z.string().optional(),
-  includeDescription: z.boolean().optional(),
-  category: z.string().optional(),
-  deep: z.boolean().optional(),
-  path: z.string().optional(),
-  owner: z.string().optional(),
-  repo: z.string().optional(),
-  branch: z.string().optional(),
-}).refine((data) => {
-  // Validate required parameters based on action
-  switch (data.action) {
-    case "get_component":
-    case "get_demo":
-    case "get_metadata":
-    case "get_documentation":
-    case "get_stories":
-    case "get_tests":
-    case "get_dependencies":
-      return !!data.componentName;
-    case "search":
-      return !!data.query;
-    case "list_components":
-    case "get_directory":
-    case "get_theme_tokens":
-      return true;
-    default:
-      return false;
-  }
-}, {
-  message: "Missing required parameters for the specified action",
-});
+const unifiedToolSchema = z
+  .object({
+    action: z.enum([
+      "get_component",
+      "get_demo",
+      "list_components",
+      "get_metadata",
+      "get_directory",
+      "get_documentation",
+      "get_stories",
+      "get_tests",
+      "search",
+      "get_theme_tokens",
+      "get_dependencies",
+    ]),
+    componentName: z.string().optional(),
+    query: z.string().optional(),
+    includeDescription: z.boolean().optional(),
+    category: z.string().optional(),
+    deep: z.boolean().optional(),
+    path: z.string().optional(),
+    owner: z.string().optional(),
+    repo: z.string().optional(),
+    branch: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Validate required parameters based on action
+      switch (data.action) {
+        case "get_component":
+        case "get_demo":
+        case "get_metadata":
+        case "get_documentation":
+        case "get_stories":
+        case "get_tests":
+        case "get_dependencies":
+          return !!data.componentName;
+        case "search":
+          return !!data.query;
+        case "list_components":
+        case "get_directory":
+        case "get_theme_tokens":
+          return true;
+        default:
+          return false;
+      }
+    },
+    {
+      message: "Missing required parameters for the specified action",
+    },
+  );
 
 // Unified tool: grafana_ui - Single tool for all Grafana UI operations
 server.tool(
@@ -141,14 +146,17 @@ server.tool(
     try {
       // Validate parameters based on action
       const validatedParams = unifiedToolSchema.parse(params);
-      
       switch (validatedParams.action) {
         case "get_component":
-          const sourceCode = await axios.getComponentSource(validatedParams.componentName!);
+          const sourceCode = await axios.getComponentSource(
+            validatedParams.componentName!,
+          );
           return createSuccessResponse(sourceCode);
 
         case "get_demo":
-          const demoCode = await axios.getComponentDemo(validatedParams.componentName!);
+          const demoCode = await axios.getComponentDemo(
+            validatedParams.componentName!,
+          );
           return createSuccessResponse(demoCode);
 
         case "list_components":
@@ -159,7 +167,9 @@ server.tool(
           });
 
         case "get_metadata":
-          const metadata = await axios.getComponentMetadata(validatedParams.componentName!);
+          const metadata = await axios.getComponentMetadata(
+            validatedParams.componentName!,
+          );
           if (!metadata) {
             throw new McpError(
               ErrorCode.InvalidRequest,
@@ -178,8 +188,13 @@ server.tool(
           return createSuccessResponse(directoryTree);
 
         case "get_documentation":
-          const mdxContent = await axios.getComponentDocumentation(validatedParams.componentName!);
-          const parsedContent = parseMDXContent(validatedParams.componentName!, mdxContent);
+          const mdxContent = await axios.getComponentDocumentation(
+            validatedParams.componentName!,
+          );
+          const parsedContent = parseMDXContent(
+            validatedParams.componentName!,
+            mdxContent,
+          );
           return createSuccessResponse({
             title: parsedContent.title,
             sections: parsedContent.sections.map((section) => ({
@@ -196,8 +211,13 @@ server.tool(
           });
 
         case "get_stories":
-          const storyContent = await axios.getComponentDemo(validatedParams.componentName!);
-          const storyMetadata = parseStoryMetadata(validatedParams.componentName!, storyContent);
+          const storyContent = await axios.getComponentDemo(
+            validatedParams.componentName!,
+          );
+          const storyMetadata = parseStoryMetadata(
+            validatedParams.componentName!,
+            storyContent,
+          );
           const examples = extractStoryExamples(storyContent);
           return createSuccessResponse({
             component: storyMetadata.componentName,
@@ -211,7 +231,9 @@ server.tool(
           });
 
         case "get_tests":
-          const testContent = await axios.getComponentTests(validatedParams.componentName!);
+          const testContent = await axios.getComponentTests(
+            validatedParams.componentName!,
+          );
           const testDescriptions = [];
           const testRegex = /(describe|it|test)\s*\(\s*['`"]([^'`"]+)['`"]/g;
           let match;
@@ -245,9 +267,13 @@ server.tool(
           });
 
         case "get_theme_tokens":
-          const themeFiles = await axios.getThemeFiles(validatedParams.category);
+          const themeFiles = await axios.getThemeFiles(
+            validatedParams.category,
+          );
           const processedThemes: any = {};
-          for (const [themeName, themeContent] of Object.entries(themeFiles.themes)) {
+          for (const [themeName, themeContent] of Object.entries(
+            themeFiles.themes,
+          )) {
             if (typeof themeContent === "string") {
               const tokens = extractThemeTokens(themeContent);
               const themeMetadata = extractThemeMetadata(themeContent);
@@ -295,7 +321,8 @@ server.tool(
 export const tools = {
   grafana_ui: {
     name: "grafana_ui",
-    description: "Unified tool for accessing Grafana UI components, documentation, themes, and metadata",
+    description:
+      "Unified tool for accessing Grafana UI components, documentation, themes, and metadata",
     inputSchema: {
       type: "object",
       properties: {
@@ -312,13 +339,14 @@ export const tools = {
             "get_tests",
             "search",
             "get_theme_tokens",
-            "get_dependencies"
+            "get_dependencies",
           ],
           description: "The action to perform",
         },
         componentName: {
           type: "string",
-          description: 'Name of the Grafana UI component (e.g., "Button", "Alert")',
+          description:
+            'Name of the Grafana UI component (e.g., "Button", "Alert")',
         },
         query: {
           type: "string",
@@ -326,19 +354,23 @@ export const tools = {
         },
         includeDescription: {
           type: "boolean",
-          description: "Whether to search in documentation content (default: false)",
+          description:
+            "Whether to search in documentation content (default: false)",
         },
         category: {
           type: "string",
-          description: "Token category to filter by (colors, typography, spacing, shadows, etc.)",
+          description:
+            "Token category to filter by (colors, typography, spacing, shadows, etc.)",
         },
         deep: {
           type: "boolean",
-          description: "Whether to analyze dependencies recursively (default: false)",
+          description:
+            "Whether to analyze dependencies recursively (default: false)",
         },
         path: {
           type: "string",
-          description: "Path within the repository (default: components directory)",
+          description:
+            "Path within the repository (default: components directory)",
         },
         owner: {
           type: "string",
@@ -367,7 +399,9 @@ export const toolHandlers = {
     try {
       switch (params.action) {
         case "get_component":
-          const sourceCode = await axios.getComponentSource(params.componentName!);
+          const sourceCode = await axios.getComponentSource(
+            params.componentName!,
+          );
           return createSuccessResponse(sourceCode);
 
         case "get_demo":
@@ -382,7 +416,9 @@ export const toolHandlers = {
           });
 
         case "get_metadata":
-          const metadata = await axios.getComponentMetadata(params.componentName!);
+          const metadata = await axios.getComponentMetadata(
+            params.componentName!,
+          );
           return createSuccessResponse(metadata);
 
         case "get_directory":
@@ -395,8 +431,13 @@ export const toolHandlers = {
           return createSuccessResponse(directoryTree);
 
         case "get_documentation":
-          const mdxContent = await axios.getComponentDocumentation(params.componentName!);
-          const parsedContent = parseMDXContent(params.componentName!, mdxContent);
+          const mdxContent = await axios.getComponentDocumentation(
+            params.componentName!,
+          );
+          const parsedContent = parseMDXContent(
+            params.componentName!,
+            mdxContent,
+          );
           return createSuccessResponse({
             title: parsedContent.title,
             sections: parsedContent.sections.map((section) => ({
@@ -413,8 +454,13 @@ export const toolHandlers = {
           });
 
         case "get_stories":
-          const storyContent = await axios.getComponentDemo(params.componentName!);
-          const storyMetadata = parseStoryMetadata(params.componentName!, storyContent);
+          const storyContent = await axios.getComponentDemo(
+            params.componentName!,
+          );
+          const storyMetadata = parseStoryMetadata(
+            params.componentName!,
+            storyContent,
+          );
           const examples = extractStoryExamples(storyContent);
           return createSuccessResponse({
             component: storyMetadata.componentName,
@@ -428,7 +474,9 @@ export const toolHandlers = {
           });
 
         case "get_tests":
-          const testContent = await axios.getComponentTests(params.componentName!);
+          const testContent = await axios.getComponentTests(
+            params.componentName!,
+          );
           const testDescriptions = [];
           const testRegex = /(describe|it|test)\s*\(\s*['`"]([^'`"]+)['`"]/g;
           let match;
@@ -464,7 +512,9 @@ export const toolHandlers = {
         case "get_theme_tokens":
           const themeFiles = await axios.getThemeFiles(params.category);
           const processedThemes: any = {};
-          for (const [themeName, themeContent] of Object.entries(themeFiles.themes)) {
+          for (const [themeName, themeContent] of Object.entries(
+            themeFiles.themes,
+          )) {
             if (typeof themeContent === "string") {
               const tokens = extractThemeTokens(themeContent);
               const themeMetadata = extractThemeMetadata(themeContent);
