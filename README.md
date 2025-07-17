@@ -108,20 +108,25 @@ npx @shelldandy/grafana-ui-mcp-server
 grafana-ui-mcp [options]
 
 Options:
-  --github-api-key, -g <token>    GitHub Personal Access Token
-  --help, -h                      Show help message
-  --version, -v                   Show version information
+  --github-api-key, -g <token>     GitHub Personal Access Token
+  --grafana-repo-path, -l <path>   Path to local Grafana repository (takes precedence)
+  --help, -h                       Show help message
+  --version, -v                    Show version information
 
 Environment Variables:
-  GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
-  GITHUB_TOKEN                    Alternative way to provide GitHub token
+  GITHUB_PERSONAL_ACCESS_TOKEN     Alternative way to provide GitHub token
+  GITHUB_TOKEN                     Alternative way to provide GitHub token
+  GRAFANA_REPO_PATH               Path to local Grafana repository
 
 Examples:
   npx @shelldandy/grafana-ui-mcp-server --help
   npx @shelldandy/grafana-ui-mcp-server --version
   npx @shelldandy/grafana-ui-mcp-server -g ghp_1234567890abcdef
+  npx @shelldandy/grafana-ui-mcp-server --grafana-repo-path /path/to/grafana
+  npx @shelldandy/grafana-ui-mcp-server -l /path/to/grafana
   GITHUB_PERSONAL_ACCESS_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
   GITHUB_TOKEN=ghp_token npx @shelldandy/grafana-ui-mcp-server
+  GRAFANA_REPO_PATH=/path/to/grafana npx @shelldandy/grafana-ui-mcp-server
 ```
 
 ## 🔑 GitHub API Token Setup
@@ -195,6 +200,75 @@ npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token --help
 
 # Check your current rate limit
 curl -H "Authorization: token ghp_your_token" https://api.github.com/rate_limit
+```
+
+## 🏠 Local Development Support
+
+**NEW**: Work with a local Grafana repository for faster development and access to uncommitted changes!
+
+### 🎯 Why Use Local Repository?
+
+- **⚡ Faster Access**: Direct filesystem reads, no network latency
+- **🚫 No Rate Limits**: Unlimited component access
+- **🔄 Real-time Updates**: See your local changes immediately
+- **📡 Offline Support**: Works without internet connection
+- **🧪 Development Workflow**: Test with modified/uncommitted components
+
+### 🔧 Setup with Local Repository
+
+1. **Clone the Grafana Repository**:
+   ```bash
+   git clone https://github.com/grafana/grafana.git
+   cd grafana
+   ```
+
+2. **Use Local Path** (takes precedence over GitHub API):
+   ```bash
+   # Command line option
+   npx @shelldandy/grafana-ui-mcp-server --grafana-repo-path /path/to/grafana
+   npx @shelldandy/grafana-ui-mcp-server -l /path/to/grafana
+   
+   # Environment variable
+   export GRAFANA_REPO_PATH=/path/to/grafana
+   npx @shelldandy/grafana-ui-mcp-server
+   ```
+
+3. **Claude Desktop Configuration**:
+   ```json
+   {
+     "mcpServers": {
+       "grafana-ui": {
+         "command": "npx",
+         "args": ["@shelldandy/grafana-ui-mcp-server"],
+         "env": {
+           "GRAFANA_REPO_PATH": "/path/to/your/grafana/repository"
+         }
+       }
+     }
+   }
+   ```
+
+### 🔄 Configuration Priority
+
+The server checks sources in this order:
+
+1. **Local Repository** (`--grafana-repo-path` or `GRAFANA_REPO_PATH`)
+2. **GitHub API with Token** (`--github-api-key` or `GITHUB_*_TOKEN`)
+3. **GitHub API without Token** (rate limited to 60 requests/hour)
+
+### 🛡️ Graceful Fallback
+
+- If local file doesn't exist → Falls back to GitHub API automatically
+- If local repository is invalid → Falls back to GitHub API with warning
+- Source is indicated in tool responses (`"source": "local"` vs `"source": "github"`)
+
+### ✅ Verify Local Setup
+
+```bash
+# Test local repository access
+npx @shelldandy/grafana-ui-mcp-server --grafana-repo-path /path/to/grafana --help
+
+# Should show: "Local Grafana repository configured: /path/to/grafana"
 ```
 
 ## 🛠️ Tool Usage Examples

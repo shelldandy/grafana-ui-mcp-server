@@ -30,21 +30,25 @@ A Model Context Protocol server for Grafana UI components, providing AI assistan
 with comprehensive access to component source code, documentation, stories, and metadata.
 
 Usage:
-  npx @jpisnice/grafana-ui-mcp-server [options]
+  npx @shelldandy/grafana-ui-mcp-server [options]
 
 Options:
-  --github-api-key, -g <token>    GitHub Personal Access Token for API access
-  --help, -h                      Show this help message
-  --version, -v                   Show version information
+  --github-api-key, -g <token>     GitHub Personal Access Token for API access
+  --grafana-repo-path, -l <path>   Path to local Grafana repository (takes precedence over GitHub API)
+  --help, -h                       Show this help message
+  --version, -v                    Show version information
 
 Examples:
-  npx @jpisnice/grafana-ui-mcp-server
-  npx @jpisnice/grafana-ui-mcp-server --github-api-key ghp_your_token_here
-  npx @jpisnice/grafana-ui-mcp-server -g ghp_your_token_here
+  npx @shelldandy/grafana-ui-mcp-server
+  npx @shelldandy/grafana-ui-mcp-server --github-api-key ghp_your_token_here
+  npx @shelldandy/grafana-ui-mcp-server -g ghp_your_token_here
+  npx @shelldandy/grafana-ui-mcp-server --grafana-repo-path /path/to/grafana
+  npx @shelldandy/grafana-ui-mcp-server -l /path/to/grafana
 
 Environment Variables:
-  GITHUB_PERSONAL_ACCESS_TOKEN    Alternative way to provide GitHub token
-  GITHUB_TOKEN                    Alternative way to provide GitHub token
+  GITHUB_PERSONAL_ACCESS_TOKEN     Alternative way to provide GitHub token
+  GITHUB_TOKEN                     Alternative way to provide GitHub token
+  GRAFANA_REPO_PATH               Path to local Grafana repository
 
 Available Tool (Unified Interface):
   Single Tool: grafana_ui
@@ -116,7 +120,19 @@ For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
     githubApiKey = process.env.GITHUB_TOKEN;
   }
 
-  return { githubApiKey };
+  // Grafana repository path
+  const grafanaRepoPathIndex = args.findIndex(
+    (arg) => arg === "--grafana-repo-path" || arg === "-l",
+  );
+  let grafanaRepoPath = null;
+
+  if (grafanaRepoPathIndex !== -1 && args[grafanaRepoPathIndex + 1]) {
+    grafanaRepoPath = args[grafanaRepoPathIndex + 1];
+  } else if (process.env.GRAFANA_REPO_PATH) {
+    grafanaRepoPath = process.env.GRAFANA_REPO_PATH;
+  }
+
+  return { githubApiKey, grafanaRepoPath };
 }
 
 /**
@@ -124,18 +140,32 @@ For more information, visit: https://github.com/shelldandy/grafana-ui-mcp-server
  */
 async function main() {
   try {
-    const { githubApiKey } = await parseArgs();
+    const { githubApiKey, grafanaRepoPath } = await parseArgs();
 
-    // Configure GitHub API key if provided
-    if (githubApiKey) {
+    // Configure local Grafana repository path (takes precedence over GitHub API)
+    if (grafanaRepoPath) {
+      try {
+        axios.setLocalGrafanaRepo(grafanaRepoPath);
+        console.error(`Local Grafana repository configured: ${grafanaRepoPath}`);
+      } catch (error: any) {
+        console.error(`Error configuring local repository: ${error.message}`);
+        console.error("Falling back to GitHub API access");
+        
+        // Fall back to GitHub API configuration
+        if (githubApiKey) {
+          axios.setGitHubApiKey(githubApiKey);
+          console.error("GitHub API key configured successfully");
+        }
+      }
+    } else if (githubApiKey) {
       axios.setGitHubApiKey(githubApiKey);
       console.error("GitHub API key configured successfully");
     } else {
       console.error(
-        "Warning: No GitHub API key provided. Rate limited to 60 requests/hour.",
+        "Warning: No local repository or GitHub API key provided. Rate limited to 60 requests/hour.",
       );
       console.error(
-        "Use --github-api-key flag or set GITHUB_PERSONAL_ACCESS_TOKEN or GITHUB_TOKEN environment variable.",
+        "Use --grafana-repo-path for local access or --github-api-key for GitHub API access.",
       );
     }
 
