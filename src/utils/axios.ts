@@ -1,4 +1,6 @@
 import { Axios } from "axios";
+import fs from "fs";
+import path from "path";
 
 // Constants for the Grafana UI repository structure
 const REPO_OWNER = "grafana";
@@ -6,6 +8,9 @@ const REPO_NAME = "grafana";
 const REPO_BRANCH = "main";
 const GRAFANA_UI_BASE_PATH = "packages/grafana-ui/src";
 const COMPONENTS_PATH = `${GRAFANA_UI_BASE_PATH}/components`;
+
+// Local repository configuration
+let localRepoPath: string | null = null;
 
 // GitHub API for accessing repository structure and metadata
 const githubApi = new Axios({
@@ -42,11 +47,71 @@ const githubRaw = new Axios({
 });
 
 /**
+ * Set local Grafana repository path
+ * @param repoPath Path to local Grafana repository
+ */
+function setLocalGrafanaRepo(repoPath: string): void {
+  // Validate path exists and has expected structure
+  const componentsPath = path.join(repoPath, COMPONENTS_PATH);
+  if (!fs.existsSync(componentsPath)) {
+    throw new Error(
+      `Invalid Grafana repository path: ${componentsPath} not found. ` +
+      `Expected Grafana repository structure with ${COMPONENTS_PATH} directory.`
+    );
+  }
+  
+  // Additional validation - check for at least one component directory
+  try {
+    const componentDirs = fs.readdirSync(componentsPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name);
+    
+    if (componentDirs.length === 0) {
+      throw new Error(
+        `No component directories found in ${componentsPath}. ` +
+        `Expected Grafana UI component structure.`
+      );
+    }
+  } catch (error: any) {
+    throw new Error(
+      `Cannot read components directory ${componentsPath}: ${error.message}`
+    );
+  }
+
+  localRepoPath = repoPath;
+  console.log(`Local Grafana repository configured: ${repoPath}`);
+}
+
+/**
+ * Get component source from local filesystem
+ * @param componentName Name of the component
+ * @returns Promise with component source code or null if not found locally
+ */
+async function getComponentSourceLocal(componentName: string): Promise<string | null> {
+  if (!localRepoPath) return null;
+  
+  const componentPath = path.join(localRepoPath, COMPONENTS_PATH, componentName, `${componentName}.tsx`);
+  
+  try {
+    return fs.readFileSync(componentPath, 'utf8');
+  } catch (error) {
+    return null; // Fall back to GitHub API
+  }
+}
+
+/**
  * Fetch component source code from Grafana UI
  * @param componentName Name of the component (e.g., "Button", "Alert")
  * @returns Promise with component source code
  */
 async function getComponentSource(componentName: string): Promise<string> {
+  // Try local filesystem first
+  const localSource = await getComponentSourceLocal(componentName);
+  if (localSource !== null) {
+    return localSource;
+  }
+
+  // Fall back to GitHub API
   const componentPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.tsx`;
 
   try {
@@ -54,8 +119,25 @@ async function getComponentSource(componentName: string): Promise<string> {
     return response.data;
   } catch (error) {
     throw new Error(
-      `Component "${componentName}" not found in Grafana UI repository`,
+      `Component "${componentName}" not found in ${localRepoPath ? 'local repository or ' : ''}Grafana UI repository`,
     );
+  }
+}
+
+/**
+ * Get component demo from local filesystem
+ * @param componentName Name of the component
+ * @returns Promise with component demo code or null if not found locally
+ */
+async function getComponentDemoLocal(componentName: string): Promise<string | null> {
+  if (!localRepoPath) return null;
+  
+  const storyPath = path.join(localRepoPath, COMPONENTS_PATH, componentName, `${componentName}.story.tsx`);
+  
+  try {
+    return fs.readFileSync(storyPath, 'utf8');
+  } catch (error) {
+    return null; // Fall back to GitHub API
   }
 }
 
@@ -65,6 +147,13 @@ async function getComponentSource(componentName: string): Promise<string> {
  * @returns Promise with component story code
  */
 async function getComponentDemo(componentName: string): Promise<string> {
+  // Try local filesystem first
+  const localDemo = await getComponentDemoLocal(componentName);
+  if (localDemo !== null) {
+    return localDemo;
+  }
+
+  // Fall back to GitHub API
   const storyPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.story.tsx`;
 
   try {
@@ -72,8 +161,28 @@ async function getComponentDemo(componentName: string): Promise<string> {
     return response.data;
   } catch (error) {
     throw new Error(
-      `Story for component "${componentName}" not found in Grafana UI repository`,
+      `Story for component "${componentName}" not found in ${localRepoPath ? 'local repository or ' : ''}Grafana UI repository`,
     );
+  }
+}
+
+/**
+ * Get available components from local filesystem
+ * @returns Promise with list of component names or null if not available locally
+ */
+async function getAvailableComponentsLocal(): Promise<string[] | null> {
+  if (!localRepoPath) return null;
+  
+  const componentsPath = path.join(localRepoPath, COMPONENTS_PATH);
+  
+  try {
+    const items = fs.readdirSync(componentsPath, { withFileTypes: true });
+    return items
+      .filter(item => item.isDirectory())
+      .map(item => item.name)
+      .sort();
+  } catch (error) {
+    return null; // Fall back to GitHub API
   }
 }
 
@@ -82,6 +191,13 @@ async function getComponentDemo(componentName: string): Promise<string> {
  * @returns Promise with list of component names
  */
 async function getAvailableComponents(): Promise<string[]> {
+  // Try local filesystem first
+  const localComponents = await getAvailableComponentsLocal();
+  if (localComponents !== null) {
+    return localComponents;
+  }
+
+  // Fall back to GitHub API
   try {
     const response = await githubApi.get(
       `/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMPONENTS_PATH}`,
@@ -90,7 +206,45 @@ async function getAvailableComponents(): Promise<string[]> {
       .filter((item: any) => item.type === "dir")
       .map((item: any) => item.name);
   } catch (error) {
-    throw new Error("Failed to fetch available components from Grafana UI");
+    throw new Error(
+      `Failed to fetch available components from ${localRepoPath ? 'local repository or ' : ''}Grafana UI`
+    );
+  }
+}
+
+/**
+ * Get component metadata from local filesystem
+ * @param componentName Name of the component
+ * @returns Promise with component metadata or null if not available locally
+ */
+async function getComponentMetadataLocal(componentName: string): Promise<any | null> {
+  if (!localRepoPath) return null;
+  
+  const componentPath = path.join(localRepoPath, COMPONENTS_PATH, componentName);
+  
+  try {
+    const items = fs.readdirSync(componentPath, { withFileTypes: true });
+    const files = items
+      .filter(item => item.isFile())
+      .map(item => item.name);
+
+    // Basic metadata from file structure
+    return {
+      name: componentName,
+      type: "grafana-ui-component",
+      source: "local",
+      files: files,
+      hasImplementation: files.includes(`${componentName}.tsx`),
+      hasStories: files.some((file) => file.endsWith(".story.tsx")),
+      hasDocumentation: files.includes(`${componentName}.mdx`),
+      hasTests: files.some((file) => file.endsWith(".test.tsx")),
+      hasTypes: files.includes("types.ts"),
+      hasUtils: files.includes("utils.ts"),
+      hasStyles: files.includes("styles.ts"),
+      totalFiles: files.length,
+    };
+  } catch (error) {
+    return null; // Fall back to GitHub API
   }
 }
 
@@ -100,6 +254,13 @@ async function getAvailableComponents(): Promise<string[]> {
  * @returns Promise with component metadata
  */
 async function getComponentMetadata(componentName: string): Promise<any> {
+  // Try local filesystem first
+  const localMetadata = await getComponentMetadataLocal(componentName);
+  if (localMetadata !== null) {
+    return localMetadata;
+  }
+
+  // Fall back to GitHub API
   try {
     // Get the component directory contents
     const response = await githubApi.get(
@@ -116,6 +277,7 @@ async function getComponentMetadata(componentName: string): Promise<any> {
     return {
       name: componentName,
       type: "grafana-ui-component",
+      source: "github",
       files: files,
       hasImplementation: files.includes(`${componentName}.tsx`),
       hasStories: files.some((file) => file.endsWith(".story.tsx")),
@@ -340,6 +502,23 @@ async function buildDirectoryTreeWithFallback(
 }
 
 /**
+ * Get component documentation from local filesystem
+ * @param componentName Name of the component
+ * @returns Promise with component documentation or null if not found locally
+ */
+async function getComponentDocumentationLocal(componentName: string): Promise<string | null> {
+  if (!localRepoPath) return null;
+  
+  const docPath = path.join(localRepoPath, COMPONENTS_PATH, componentName, `${componentName}.mdx`);
+  
+  try {
+    return fs.readFileSync(docPath, 'utf8');
+  } catch (error) {
+    return null; // Fall back to GitHub API
+  }
+}
+
+/**
  * Fetch component documentation from Grafana UI
  * @param componentName Name of the component
  * @returns Promise with component MDX documentation
@@ -347,6 +526,13 @@ async function buildDirectoryTreeWithFallback(
 async function getComponentDocumentation(
   componentName: string,
 ): Promise<string> {
+  // Try local filesystem first
+  const localDocs = await getComponentDocumentationLocal(componentName);
+  if (localDocs !== null) {
+    return localDocs;
+  }
+
+  // Fall back to GitHub API
   const docPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.mdx`;
 
   try {
@@ -354,7 +540,7 @@ async function getComponentDocumentation(
     return response.data;
   } catch (error) {
     throw new Error(
-      `Documentation for component "${componentName}" not found in Grafana UI repository`,
+      `Documentation for component "${componentName}" not found in ${localRepoPath ? 'local repository or ' : ''}Grafana UI repository`,
     );
   }
 }
@@ -445,11 +631,35 @@ async function getGitHubRateLimit(): Promise<any> {
 }
 
 /**
+ * Get component tests from local filesystem
+ * @param componentName Name of the component
+ * @returns Promise with component test code or null if not found locally
+ */
+async function getComponentTestsLocal(componentName: string): Promise<string | null> {
+  if (!localRepoPath) return null;
+  
+  const testPath = path.join(localRepoPath, COMPONENTS_PATH, componentName, `${componentName}.test.tsx`);
+  
+  try {
+    return fs.readFileSync(testPath, 'utf8');
+  } catch (error) {
+    return null; // Fall back to GitHub API
+  }
+}
+
+/**
  * Fetch component test files from Grafana UI
  * @param componentName Name of the component
  * @returns Promise with component test code
  */
 async function getComponentTests(componentName: string): Promise<string> {
+  // Try local filesystem first
+  const localTests = await getComponentTestsLocal(componentName);
+  if (localTests !== null) {
+    return localTests;
+  }
+
+  // Fall back to GitHub API
   const testPath = `${COMPONENTS_PATH}/${componentName}/${componentName}.test.tsx`;
 
   try {
@@ -457,7 +667,7 @@ async function getComponentTests(componentName: string): Promise<string> {
     return response.data;
   } catch (error) {
     throw new Error(
-      `Tests for component "${componentName}" not found in Grafana UI repository`,
+      `Tests for component "${componentName}" not found in ${localRepoPath ? 'local repository or ' : ''}Grafana UI repository`,
     );
   }
 }
@@ -531,11 +741,56 @@ async function searchComponents(
 }
 
 /**
+ * Get theme files from local filesystem
+ * @param category Optional category filter
+ * @returns Promise with theme files or null if not available locally
+ */
+async function getThemeFilesLocal(category?: string): Promise<any | null> {
+  if (!localRepoPath) return null;
+  
+  const themePaths = [
+    "packages/grafana-ui/src/themes/light.ts",
+    "packages/grafana-ui/src/themes/dark.ts", 
+    "packages/grafana-ui/src/themes/base.ts",
+    "packages/grafana-ui/src/themes/default.ts",
+  ];
+
+  const themeFiles: any = {
+    category: category || "all",
+    source: "local",
+    themes: {},
+  };
+
+  let foundAny = false;
+
+  for (const themePath of themePaths) {
+    try {
+      const fullPath = path.join(localRepoPath, themePath);
+      const content = fs.readFileSync(fullPath, 'utf8');
+      const themeName = themePath.split("/").pop()?.replace(".ts", "") || "unknown";
+      themeFiles.themes[themeName] = content;
+      foundAny = true;
+    } catch (error) {
+      // Theme file doesn't exist locally, skip it
+    }
+  }
+
+  return foundAny ? themeFiles : null;
+}
+
+/**
  * Fetch Grafana theme files
  * @param category Optional category filter (colors, typography, spacing, etc.)
  * @returns Promise with theme file content
  */
 async function getThemeFiles(category?: string): Promise<any> {
+  // Try local filesystem first
+  const localThemes = await getThemeFilesLocal(category);
+  if (localThemes !== null) {
+    return localThemes;
+  }
+
+  // Fall back to GitHub API
   const themePaths = [
     "packages/grafana-ui/src/themes/light.ts",
     "packages/grafana-ui/src/themes/dark.ts",
@@ -545,6 +800,7 @@ async function getThemeFiles(category?: string): Promise<any> {
 
   const themeFiles: any = {
     category: category || "all",
+    source: "github",
     themes: {},
   };
 
@@ -658,6 +914,7 @@ export const axios = {
   getThemeFiles,
   getComponentDependencies,
   setGitHubApiKey,
+  setLocalGrafanaRepo,
   getGitHubRateLimit,
   // Path constants for easy access
   paths: {
